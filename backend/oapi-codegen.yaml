@@ -1,0 +1,7 @@
+# Generates Go server types from the shared OpenAPI spec.
+package: gen
+output: internal/api/gen/api.gen.go
+generate:
+  models: true
+  chi-server: true
+  strict-server: true

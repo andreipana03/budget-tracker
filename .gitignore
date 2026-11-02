@@ -1,2 +1,17 @@
-node_modules/
+# Secrets and local overrides
 .env
+
+# macOS
+.DS_Store
+
+# Web
+node_modules/
+
+# iOS and Swift
+.build/
+DerivedData/
+xcuserdata/
+.swiftpm/
+
+# Local Claude Code instructions
+CLAUDE.md
