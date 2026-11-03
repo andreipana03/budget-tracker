@@ -11,7 +11,7 @@ GO_TOOL := go tool -modfile=tools.mod
 MIGRATIONS := db/migrations
 
 .DEFAULT_GOAL := help
-.PHONY: help setup db-up db-down migrate backend web generate generate-backend generate-web generate-ios test
+.PHONY: help setup db-up db-down migrate db-seed db-test backend web generate generate-backend generate-web generate-ios test
 
 help: ## List the available commands
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -27,6 +27,15 @@ db-down: ## Stop PostgreSQL (keeps its data)
 
 migrate: ## Apply the database migrations
 	cd backend && $(GO_TOOL) goose -dir $(MIGRATIONS) postgres "$(DATABASE_URL)" up
+
+# psql runs inside the postgres container, so nothing extra needs to be installed.
+PSQL := docker compose exec -T postgres psql "$(DATABASE_URL)" -X -v ON_ERROR_STOP=1
+
+db-seed: ## Load the demo user and data from the design mockups (run after migrate)
+	$(PSQL) < backend/db/seed/dev_seed.sql
+
+db-test: ## Run the database integrity tests (rolled back, leaves no data)
+	$(PSQL) < backend/db/tests/schema_test.sql
 
 backend: ## Run the API on http://localhost:8080
 	cd backend && go run ./cmd/api

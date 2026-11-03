@@ -5,11 +5,725 @@
 package store
 
 import (
+	"database/sql/driver"
+	"fmt"
+	"net/netip"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type AccountType string
+
+const (
+	AccountTypeCash       AccountType = "cash"
+	AccountTypeBank       AccountType = "bank"
+	AccountTypeCreditCard AccountType = "credit_card"
+	AccountTypeSavings    AccountType = "savings"
+	AccountTypeOther      AccountType = "other"
+)
+
+func (e *AccountType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AccountType(s)
+	case string:
+		*e = AccountType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AccountType: %T", src)
+	}
+	return nil
+}
+
+type NullAccountType struct {
+	AccountType AccountType
+	Valid       bool // Valid is true if AccountType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAccountType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AccountType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AccountType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAccountType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AccountType), nil
+}
+
+type AuthMethod string
+
+const (
+	AuthMethodPassword AuthMethod = "password"
+	AuthMethodGoogle   AuthMethod = "google"
+	AuthMethodApple    AuthMethod = "apple"
+	AuthMethodPasskey  AuthMethod = "passkey"
+)
+
+func (e *AuthMethod) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuthMethod(s)
+	case string:
+		*e = AuthMethod(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuthMethod: %T", src)
+	}
+	return nil
+}
+
+type NullAuthMethod struct {
+	AuthMethod AuthMethod
+	Valid      bool // Valid is true if AuthMethod is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuthMethod) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuthMethod, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuthMethod.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuthMethod) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuthMethod), nil
+}
+
+type AuthProvider string
+
+const (
+	AuthProviderGoogle AuthProvider = "google"
+	AuthProviderApple  AuthProvider = "apple"
+)
+
+func (e *AuthProvider) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuthProvider(s)
+	case string:
+		*e = AuthProvider(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuthProvider: %T", src)
+	}
+	return nil
+}
+
+type NullAuthProvider struct {
+	AuthProvider AuthProvider
+	Valid        bool // Valid is true if AuthProvider is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuthProvider) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuthProvider, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuthProvider.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuthProvider) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuthProvider), nil
+}
+
+type BudgetScope string
+
+const (
+	BudgetScopeOngoing     BudgetScope = "ongoing"
+	BudgetScopeSingleMonth BudgetScope = "single_month"
+)
+
+func (e *BudgetScope) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BudgetScope(s)
+	case string:
+		*e = BudgetScope(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BudgetScope: %T", src)
+	}
+	return nil
+}
+
+type NullBudgetScope struct {
+	BudgetScope BudgetScope
+	Valid       bool // Valid is true if BudgetScope is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBudgetScope) Scan(value interface{}) error {
+	if value == nil {
+		ns.BudgetScope, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BudgetScope.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBudgetScope) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BudgetScope), nil
+}
+
+type ClientPlatform string
+
+const (
+	ClientPlatformWeb ClientPlatform = "web"
+	ClientPlatformIos ClientPlatform = "ios"
+)
+
+func (e *ClientPlatform) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClientPlatform(s)
+	case string:
+		*e = ClientPlatform(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClientPlatform: %T", src)
+	}
+	return nil
+}
+
+type NullClientPlatform struct {
+	ClientPlatform ClientPlatform
+	Valid          bool // Valid is true if ClientPlatform is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClientPlatform) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClientPlatform, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClientPlatform.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClientPlatform) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClientPlatform), nil
+}
+
+type EntryKind string
+
+const (
+	EntryKindExpense EntryKind = "expense"
+	EntryKindIncome  EntryKind = "income"
+)
+
+func (e *EntryKind) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EntryKind(s)
+	case string:
+		*e = EntryKind(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EntryKind: %T", src)
+	}
+	return nil
+}
+
+type NullEntryKind struct {
+	EntryKind EntryKind
+	Valid     bool // Valid is true if EntryKind is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEntryKind) Scan(value interface{}) error {
+	if value == nil {
+		ns.EntryKind, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EntryKind.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEntryKind) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EntryKind), nil
+}
+
+type HouseholdRole string
+
+const (
+	HouseholdRoleOwner  HouseholdRole = "owner"
+	HouseholdRoleMember HouseholdRole = "member"
+)
+
+func (e *HouseholdRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = HouseholdRole(s)
+	case string:
+		*e = HouseholdRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for HouseholdRole: %T", src)
+	}
+	return nil
+}
+
+type NullHouseholdRole struct {
+	HouseholdRole HouseholdRole
+	Valid         bool // Valid is true if HouseholdRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullHouseholdRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.HouseholdRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.HouseholdRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullHouseholdRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.HouseholdRole), nil
+}
+
+type RecurrenceFrequency string
+
+const (
+	RecurrenceFrequencyWeekly  RecurrenceFrequency = "weekly"
+	RecurrenceFrequencyMonthly RecurrenceFrequency = "monthly"
+	RecurrenceFrequencyYearly  RecurrenceFrequency = "yearly"
+)
+
+func (e *RecurrenceFrequency) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RecurrenceFrequency(s)
+	case string:
+		*e = RecurrenceFrequency(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RecurrenceFrequency: %T", src)
+	}
+	return nil
+}
+
+type NullRecurrenceFrequency struct {
+	RecurrenceFrequency RecurrenceFrequency
+	Valid               bool // Valid is true if RecurrenceFrequency is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRecurrenceFrequency) Scan(value interface{}) error {
+	if value == nil {
+		ns.RecurrenceFrequency, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RecurrenceFrequency.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRecurrenceFrequency) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RecurrenceFrequency), nil
+}
+
+type TransactionStatus string
+
+const (
+	TransactionStatusPosted  TransactionStatus = "posted"
+	TransactionStatusPending TransactionStatus = "pending"
+	TransactionStatusSkipped TransactionStatus = "skipped"
+)
+
+func (e *TransactionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TransactionStatus(s)
+	case string:
+		*e = TransactionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TransactionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTransactionStatus struct {
+	TransactionStatus TransactionStatus
+	Valid             bool // Valid is true if TransactionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTransactionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TransactionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TransactionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTransactionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TransactionStatus), nil
+}
+
+type VerificationPurpose string
+
+const (
+	VerificationPurposeEmailVerification VerificationPurpose = "email_verification"
+	VerificationPurposePasswordReset     VerificationPurpose = "password_reset"
+)
+
+func (e *VerificationPurpose) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = VerificationPurpose(s)
+	case string:
+		*e = VerificationPurpose(s)
+	default:
+		return fmt.Errorf("unsupported scan type for VerificationPurpose: %T", src)
+	}
+	return nil
+}
+
+type NullVerificationPurpose struct {
+	VerificationPurpose VerificationPurpose
+	Valid               bool // Valid is true if VerificationPurpose is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullVerificationPurpose) Scan(value interface{}) error {
+	if value == nil {
+		ns.VerificationPurpose, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.VerificationPurpose.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullVerificationPurpose) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.VerificationPurpose), nil
+}
+
+type WebauthnCeremony string
+
+const (
+	WebauthnCeremonyRegistration   WebauthnCeremony = "registration"
+	WebauthnCeremonyAuthentication WebauthnCeremony = "authentication"
+)
+
+func (e *WebauthnCeremony) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WebauthnCeremony(s)
+	case string:
+		*e = WebauthnCeremony(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WebauthnCeremony: %T", src)
+	}
+	return nil
+}
+
+type NullWebauthnCeremony struct {
+	WebauthnCeremony WebauthnCeremony
+	Valid            bool // Valid is true if WebauthnCeremony is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWebauthnCeremony) Scan(value interface{}) error {
+	if value == nil {
+		ns.WebauthnCeremony, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WebauthnCeremony.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWebauthnCeremony) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WebauthnCeremony), nil
+}
+
+type Account struct {
+	ID                  pgtype.UUID
+	HouseholdID         pgtype.UUID
+	Name                string
+	Type                AccountType
+	Currency            string
+	OpeningBalanceMinor int64
+	OpeningBalanceOn    pgtype.Date
+	IncludeInTotal      bool
+	SortOrder           int32
+	ArchivedAt          pgtype.Timestamptz
+	CreatedBy           pgtype.UUID
+	RowVersion          int64
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+	DeletedAt           pgtype.Timestamptz
+}
+
+type AccountBalance struct {
+	AccountID    pgtype.UUID
+	HouseholdID  pgtype.UUID
+	Currency     string
+	BalanceMinor int64
+}
 
 type AppMetadatum struct {
 	Key       string
 	Value     string
 	CreatedAt pgtype.Timestamptz
+}
+
+type Budget struct {
+	ID           pgtype.UUID
+	HouseholdID  pgtype.UUID
+	CategoryID   pgtype.UUID
+	CategoryKind EntryKind
+	Scope        BudgetScope
+	Month        pgtype.Date
+	AmountMinor  pgtype.Int8
+	CreatedBy    pgtype.UUID
+	RowVersion   int64
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	DeletedAt    pgtype.Timestamptz
+}
+
+type Category struct {
+	ID          pgtype.UUID
+	HouseholdID pgtype.UUID
+	Kind        EntryKind
+	Name        string
+	Color       string
+	Icon        string
+	IsFixed     bool
+	SortOrder   int32
+	SystemKey   pgtype.Text
+	ArchivedAt  pgtype.Timestamptz
+	CreatedBy   pgtype.UUID
+	RowVersion  int64
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+	DeletedAt   pgtype.Timestamptz
+}
+
+type Currency struct {
+	Code       string
+	Name       string
+	MinorUnits int16
+}
+
+type FxRate struct {
+	Source        string
+	BaseCurrency  string
+	QuoteCurrency string
+	RateDate      pgtype.Date
+	Rate          pgtype.Numeric
+	FetchedAt     pgtype.Timestamptz
+}
+
+type Household struct {
+	ID            pgtype.UUID
+	Name          string
+	HomeCurrency  string
+	Timezone      string
+	MonthStartDay int16
+	ChangeSeq     int64
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type HouseholdMember struct {
+	HouseholdID pgtype.UUID
+	UserID      pgtype.UUID
+	Role        HouseholdRole
+	JoinedAt    pgtype.Timestamptz
+}
+
+type Passkey struct {
+	ID              pgtype.UUID
+	UserID          pgtype.UUID
+	CredentialID    []byte
+	PublicKey       []byte
+	AttestationType string
+	Aaguid          pgtype.UUID
+	SignCount       int64
+	Transports      []string
+	BackupEligible  bool
+	BackupState     bool
+	Name            string
+	CreatedAt       pgtype.Timestamptz
+	LastUsedAt      pgtype.Timestamptz
+}
+
+type RecurringTransaction struct {
+	ID              pgtype.UUID
+	HouseholdID     pgtype.UUID
+	Kind            EntryKind
+	Title           string
+	Note            pgtype.Text
+	AmountMinor     int64
+	Currency        string
+	AccountID       pgtype.UUID
+	AccountCurrency string
+	CategoryID      pgtype.UUID
+	Frequency       RecurrenceFrequency
+	IntervalCount   int16
+	StartsOn        pgtype.Date
+	NextDueOn       pgtype.Date
+	EndsOn          pgtype.Date
+	IsActive        bool
+	CreatedBy       pgtype.UUID
+	RowVersion      int64
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	DeletedAt       pgtype.Timestamptz
+}
+
+type Session struct {
+	ID                       pgtype.UUID
+	UserID                   pgtype.UUID
+	RefreshTokenHash         []byte
+	PreviousRefreshTokenHash []byte
+	RotatedAt                pgtype.Timestamptz
+	Platform                 ClientPlatform
+	DeviceName               pgtype.Text
+	UserAgent                pgtype.Text
+	IpAddress                *netip.Addr
+	AuthMethod               AuthMethod
+	CreatedAt                pgtype.Timestamptz
+	LastUsedAt               pgtype.Timestamptz
+	ExpiresAt                pgtype.Timestamptz
+	RevokedAt                pgtype.Timestamptz
+}
+
+type Transaction struct {
+	ID                    pgtype.UUID
+	HouseholdID           pgtype.UUID
+	Kind                  EntryKind
+	Status                TransactionStatus
+	Title                 string
+	Note                  pgtype.Text
+	OccurredOn            pgtype.Date
+	OccurredAt            pgtype.Timestamptz
+	CategoryID            pgtype.UUID
+	AccountID             pgtype.UUID
+	AccountCurrency       string
+	AmountMinor           int64
+	Currency              string
+	AccountAmountMinor    int64
+	HomeCurrency          string
+	HomeAmountMinor       int64
+	FxRate                pgtype.Numeric
+	FxRateDate            pgtype.Date
+	RecurringID           pgtype.UUID
+	RecurringOccurrenceOn pgtype.Date
+	CreatedBy             pgtype.UUID
+	RowVersion            int64
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+	DeletedAt             pgtype.Timestamptz
+}
+
+type Transfer struct {
+	ID              pgtype.UUID
+	HouseholdID     pgtype.UUID
+	FromAccountID   pgtype.UUID
+	FromCurrency    string
+	FromAmountMinor int64
+	ToAccountID     pgtype.UUID
+	ToCurrency      string
+	ToAmountMinor   int64
+	OccurredOn      pgtype.Date
+	OccurredAt      pgtype.Timestamptz
+	Note            pgtype.Text
+	CreatedBy       pgtype.UUID
+	RowVersion      int64
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	DeletedAt       pgtype.Timestamptz
+}
+
+type User struct {
+	ID                pgtype.UUID
+	Email             string
+	EmailVerifiedAt   pgtype.Timestamptz
+	PasswordHash      pgtype.Text
+	PasswordChangedAt pgtype.Timestamptz
+	DisplayName       pgtype.Text
+	Locale            string
+	Region            string
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	LastSignInAt      pgtype.Timestamptz
+}
+
+type UserIdentity struct {
+	ID                    pgtype.UUID
+	UserID                pgtype.UUID
+	Provider              AuthProvider
+	ProviderSubject       string
+	Email                 pgtype.Text
+	EmailVerified         bool
+	RefreshTokenEncrypted []byte
+	CreatedAt             pgtype.Timestamptz
+	LastUsedAt            pgtype.Timestamptz
+}
+
+type VerificationToken struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	Purpose    VerificationPurpose
+	TokenHash  []byte
+	Email      string
+	ExpiresAt  pgtype.Timestamptz
+	ConsumedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
+}
+
+type WebauthnChallenge struct {
+	ID          pgtype.UUID
+	UserID      pgtype.UUID
+	Ceremony    WebauthnCeremony
+	SessionData []byte
+	ExpiresAt   pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
 }
