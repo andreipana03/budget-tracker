@@ -176,7 +176,12 @@ function HomeContent({
             <EmptyState
               title="No Expenses Yet"
               message="Add your first expense with the + button."
-              action={{ label: 'Add Expense', onClick: () => addSheet.open() }}
+              action={{
+                label: 'Add Expense',
+                onClick: () => addSheet.open(),
+                // Without a budget the hero's "Set Budget" is this view's prominent action.
+                variant: data.budget.hasBudget ? 'prominent' : 'secondary',
+              }}
             />
           </Card>
         ) : (

@@ -25,9 +25,15 @@ import { TransactionActions, TransactionFacts, TransactionHeader } from './Trans
 import { TransactionRow } from './TransactionRow'
 import { flattenPages, groupByDay, type EntryKind, type Transaction } from './transactions'
 import { useTransactionActions } from './useTransactionActions'
-import { useTransactions } from './useTransactions'
+import { useTransactions, type TransactionStatus } from './useTransactions'
 
 type KindFilter = 'all' | EntryKind
+
+const STATUS_LABELS: Record<TransactionStatus, string> = {
+  pending: 'Waiting for Confirmation',
+  posted: 'Confirmed',
+  skipped: 'Skipped',
+}
 
 const KIND_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -46,7 +52,8 @@ function isTextField(el: EventTarget | null): boolean {
  * groups of two-line rows with swipe actions, infinite scroll, Filter sheet.
  * Desktop: filters row (segmented + category/account pop-ups), the day-grouped table
  * with one selected row (↑↓, Return edits, ⌫ deletes with Undo) and the sticky inspector.
- * Filters live in the URL: ?q=&kind=&category=&account=.
+ * Filters live in the URL: ?q=&kind=&category=&account=&status= (status=pending is linked
+ * from Subscriptions' "waiting for confirmation" row).
  */
 export function ActivityPage() {
   const [params, setParams] = useSearchParams()
@@ -55,6 +62,9 @@ export function ActivityPage() {
   const kind: EntryKind | undefined = kindParam === 'expense' || kindParam === 'income' ? kindParam : undefined
   const categoryId = params.get('category') ?? undefined
   const accountId = params.get('account') ?? undefined
+  const statusParam = params.get('status')
+  const status: TransactionStatus | undefined =
+    statusParam === 'pending' || statusParam === 'posted' || statusParam === 'skipped' ? statusParam : undefined
   const debouncedQ = useDebouncedValue(q.trim(), 250)
 
   const isRegular = useIsRegular()
@@ -63,7 +73,7 @@ export function ActivityPage() {
   const accounts = useAccounts()
   const addSheet = useAddSheet()
   const actions = useTransactionActions()
-  const list = useTransactions({ kind, categoryId, accountId, q: debouncedQ })
+  const list = useTransactions({ kind, status, categoryId, accountId, q: debouncedQ })
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | undefined>()
@@ -139,7 +149,7 @@ export function ActivityPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isRegular, items, selected, edit, remove, list])
 
-  const filtering = Boolean(debouncedQ || kind || categoryId || accountId)
+  const filtering = Boolean(debouncedQ || kind || status || categoryId || accountId)
   const empty = !list.isPending && !list.isError && items.length === 0
 
   let content: ReactNode
@@ -161,7 +171,10 @@ export function ActivityPage() {
             icon="sliders-horizontal"
             title="No Transactions"
             message="Nothing matches these filters."
-            action={{ label: 'Clear Filters', onClick: () => update({ kind: undefined, category: undefined, account: undefined }) }}
+            action={{
+              label: 'Clear Filters',
+              onClick: () => update({ kind: undefined, status: undefined, category: undefined, account: undefined }),
+            }}
           />
         ) : (
           <EmptyState
@@ -267,6 +280,20 @@ export function ActivityPage() {
           </div>
         )}
       </div>
+
+      {status && (
+        <div className="mt-3 flex lg:mt-0 lg:mb-4">
+          <button
+            type="button"
+            onClick={() => update({ status: undefined })}
+            className="pressable inline-flex h-8 items-center gap-1.5 rounded-full bg-tint-soft px-3 text-subhead font-semibold text-tint-text"
+            aria-label={`Showing ${STATUS_LABELS[status].toLowerCase()} only. Show All`}
+          >
+            {STATUS_LABELS[status]}
+            <Icon name="x" weight="bold" size={13} aria-hidden />
+          </button>
+        </div>
+      )}
 
       {content}
 

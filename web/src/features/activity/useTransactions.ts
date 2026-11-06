@@ -6,8 +6,11 @@ import { queryKeys } from '@/lib/api/queries'
 
 import type { EntryKind, TransactionPage } from './transactions'
 
+export type TransactionStatus = 'posted' | 'pending' | 'skipped'
+
 export interface TransactionFilters {
   kind?: EntryKind
+  status?: TransactionStatus
   categoryId?: string
   accountId?: string
   q?: string
@@ -19,6 +22,7 @@ const PAGE_SIZE = 50
 function cleanFilters(f: TransactionFilters): TransactionFilters {
   const out: TransactionFilters = {}
   if (f.kind) out.kind = f.kind
+  if (f.status) out.status = f.status
   if (f.categoryId) out.categoryId = f.categoryId
   if (f.accountId) out.accountId = f.accountId
   if (f.q?.trim()) out.q = f.q.trim()

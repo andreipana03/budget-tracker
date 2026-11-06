@@ -97,8 +97,11 @@ export function EmptyState({
   title: string
   /** One sentence: "Add your first expense with the + button." */
   message?: ReactNode
-  /** The prominent action, if there is one. */
-  action?: { label: string; onClick: () => void; icon?: IconName }
+  /**
+   * The action, if there is one. Prominent by default; pass variant 'secondary' when the
+   * view already has its one prominent action (design § 13: one blue button per view).
+   */
+  action?: { label: string; onClick: () => void; icon?: IconName; variant?: 'prominent' | 'secondary' }
   className?: string
 }) {
   return (
@@ -109,7 +112,7 @@ export function EmptyState({
       <h2 className="mt-4 mb-0 text-title-3">{title}</h2>
       {message && <p className="m-0 mt-1 max-w-[320px] text-subhead text-label-2">{message}</p>}
       {action && (
-        <Button variant="prominent" icon={action.icon} onClick={action.onClick} className="mt-5">
+        <Button variant={action.variant ?? 'prominent'} icon={action.icon} onClick={action.onClick} className="mt-5">
           {action.label}
         </Button>
       )}
