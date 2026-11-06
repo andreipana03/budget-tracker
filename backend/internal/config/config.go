@@ -49,7 +49,7 @@ type Config struct {
 
 	// JobsEnabled runs the BNR exchange-rate, subscription and cleanup jobs in-process.
 	JobsEnabled bool
-	// BNRBaseURL is https://www.bnr.ro; tests point it at a fake server.
+	// BNRBaseURL is where BNR publishes its XML files (https://curs.bnr.ro); tests point it at a fake server.
 	BNRBaseURL string
 
 	// TrustProxy reads the client IP from X-Forwarded-For (only behind a proxy you control).
@@ -76,7 +76,7 @@ func Load() (Config, error) {
 		SMTPUsername:       os.Getenv("SMTP_USERNAME"),
 		SMTPPassword:       os.Getenv("SMTP_PASSWORD"),
 		MailFrom:           getenv("MAIL_FROM", "Budget Tracker <no-reply@budget-tracker.test>"),
-		BNRBaseURL:         strings.TrimRight(getenv("BNR_BASE_URL", "https://www.bnr.ro"), "/"),
+		BNRBaseURL:         strings.TrimRight(getenv("BNR_BASE_URL", "https://curs.bnr.ro"), "/"),
 	}
 
 	var errs []error

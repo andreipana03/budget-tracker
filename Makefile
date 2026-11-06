@@ -15,7 +15,7 @@ SMTP_HOST ?= localhost
 SMTP_PORT ?= 1025
 MAIL_FROM ?= Budget Tracker <no-reply@budget-tracker.test>
 JOBS_ENABLED ?= true
-BNR_BASE_URL ?= https://www.bnr.ro
+BNR_BASE_URL ?= https://curs.bnr.ro
 TRUST_PROXY ?= false
 RATE_LIMIT_ENABLED ?= true
 -include backend/.env

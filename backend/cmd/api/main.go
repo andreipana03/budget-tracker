@@ -20,6 +20,7 @@ import (
 	"github.com/andreipana03/budget-tracker/backend/internal/auth"
 	"github.com/andreipana03/budget-tracker/backend/internal/clock"
 	"github.com/andreipana03/budget-tracker/backend/internal/config"
+	"github.com/andreipana03/budget-tracker/backend/internal/jobs"
 	"github.com/andreipana03/budget-tracker/backend/internal/mail"
 )
 
@@ -66,6 +67,19 @@ func run(logger *slog.Logger) error {
 			Authenticator:  server.Authenticator(),
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	// Background jobs (BNR rates, subscriptions, cleanup) stop with ctx; shutdown
+	// waits for a run in progress.
+	if cfg.JobsEnabled {
+		runner := jobs.New(jobs.Options{Pool: pool, Logger: logger, Clock: clock.Real{}, BNRBaseURL: cfg.BNRBaseURL})
+		runner.Start(ctx)
+		defer func() {
+			stop() // also when the server failed to start
+			runner.Wait()
+		}()
+	} else {
+		logger.Info("background jobs disabled: JOBS_ENABLED=false")
 	}
 
 	serveErr := make(chan error, 1)
