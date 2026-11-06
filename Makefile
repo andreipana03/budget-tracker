@@ -29,7 +29,7 @@ MIGRATIONS := db/migrations
 .PHONY: help setup db-up db-down migrate db-seed db-test test-db backend web generate generate-backend generate-web generate-ios test web-test e2e
 
 help: ## List the available commands
-	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
 setup: ## Install the web dependencies and the Playwright browsers
 	cd web && npm install && npx playwright install chromium webkit
@@ -87,5 +87,7 @@ test: test-db ## Run the backend tests (unit + integration), the web unit tests,
 web-test: ## Run the web unit tests (Vitest)
 	cd web && npm test
 
+# Needs `make db-up`. Recreates and seeds budget_tracker_e2e, starts the API on :8081 and Vite on :5174
+# (see web/playwright.config.ts), and runs Desktop Chromium + iPhone WebKit.
 e2e: ## Run the Playwright end-to-end tests (needs `make db-up`)
 	cd web && npx playwright test
