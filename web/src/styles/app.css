@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Structural styles for the component kit (src/components/ui, src/app).
+   Only what Tailwind utilities express badly lives here: sibling separators,
+   first-appearance animations, the sheet/dialog presentation and the shell's
+   "parent recedes" effect. Values mirror DesignAssets/mockups/app/app.css and
+   read tokens only.
+   ========================================================================== */
+
+@layer components {
+  /* ---------- Grouped list rows: 0.5px separators inset to the text (§ 6.5) ---------- */
+  .ui-row {
+    --sep-inset: 58px; /* single-line row with a 30px tile */
+  }
+  .ui-row--lg {
+    --sep-inset: 68px; /* two-line row with a 40px tile */
+  }
+  .ui-row--plain {
+    --sep-inset: 16px; /* no tile: inset to the row padding */
+  }
+  .ui-row + .ui-row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: var(--sep-inset);
+    height: 0.5px;
+    background: var(--separator);
+    pointer-events: none;
+  }
+  @media (min-width: 1024px) {
+    .ui-row { --sep-inset: 54px; }
+    .ui-row--lg { --sep-inset: 64px; }
+    .ui-row--plain { --sep-inset: 14px; }
+  }
+
+  /* ---------- First-appearance growth for bars (pace bar, mini pace, chart bars) ---------- */
+  .ui-grow-x {
+    transform-origin: left center;
+    animation: ui-grow-x var(--dur-chart) var(--motion-ease-out) both;
+  }
+  .ui-grow-y {
+    transform-origin: center bottom;
+    transform-box: fill-box;
+    animation: ui-grow-y var(--dur-chart) var(--motion-ease-out) both;
+  }
+  @keyframes ui-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes ui-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-grow-x, .ui-grow-y { animation: none; }
+  }
+
+  /* ---------- Hide scrollbars on the app scroller (iOS look; content still scrolls) ---------- */
+  .ui-scroller { scrollbar-width: none; }
+  .ui-scroller::-webkit-scrollbar { display: none; }
+
+  /* ---------- Sheet (compact) / dialog (regular) — § 6.11 ---------- */
+  .ui-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--dim);
+    transition: opacity var(--dur-sheet) var(--motion-ease-sheet);
+  }
+  .ui-sheet-backdrop[data-starting-style],
+  .ui-sheet-backdrop[data-ending-style] { opacity: 0; }
+
+  .ui-sheet {
+    position: fixed;
+    z-index: 51;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: calc(var(--safe-top) + 10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--sheet-bg);
+    color: var(--label);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    box-shadow: 0 -1px 0 var(--glass-edge), 0 -8px 40px rgba(0, 0, 0, 0.18);
+    outline: none;
+    transition: translate var(--dur-sheet) var(--motion-ease-sheet);
+  }
+  .ui-sheet[data-starting-style],
+  .ui-sheet[data-ending-style] { translate: 0 105%; }
+  .ui-sheet[data-dragging] { transition: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-sheet { transition: opacity var(--dur-sheet) linear; }
+    .ui-sheet[data-starting-style],
+    .ui-sheet[data-ending-style] { translate: none; opacity: 0; }
+  }
+
+  @media (min-width: 1024px) {
+    .ui-sheet-backdrop { transition-duration: var(--dur-fast); }
+    .ui-sheet {
+      top: 50%;
+      left: 50%;
+      right: auto;
+      bottom: auto;
+      width: 520px;
+      max-width: calc(100vw - 48px);
+      max-height: min(760px, calc(100dvh - 80px));
+      border-radius: 20px;
+      translate: -50% -50%;
+      box-shadow: 0 0 0 0.5px var(--glass-edge), 0 24px 80px rgba(0, 0, 0, 0.28);
+      transition: translate var(--dur-fast) var(--motion-ease-out), scale var(--dur-fast) var(--motion-ease-out),
+        opacity var(--dur-fast);
+    }
+    .ui-sheet[data-starting-style],
+    .ui-sheet[data-ending-style] { translate: -50% -48%; scale: 0.97; opacity: 0; }
+  }
+
+  /* ---------- Shell: while a compact sheet is open the page recedes (§ 4.7) ---------- */
+  .app-main {
+    transform-origin: 50% 0;
+    transition: transform var(--dur-sheet) var(--motion-ease-sheet), border-radius var(--dur-sheet) var(--motion-ease-sheet),
+      opacity var(--dur-sheet);
+  }
+  .app-chrome { transition: opacity var(--dur-fast); }
+  @media (max-width: 1023.98px) {
+    .app-shell[data-sheet-open] { background: #000; }
+    .app-shell[data-sheet-open] .app-main {
+      transform: translateY(calc(var(--safe-top) * 0.5)) scale(0.92);
+      border-radius: 36px;
+      overflow: hidden;
+      opacity: 0.9;
+    }
+    .app-shell[data-sheet-open] .app-chrome { opacity: 0; pointer-events: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-shell[data-sheet-open] .app-main { transform: none; border-radius: 0; opacity: 1; }
+  }
+}

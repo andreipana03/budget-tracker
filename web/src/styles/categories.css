@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Category hues — design § 4.1, § 12.
+   The API stores a category's color as a hue name (CategoryColor: mint, orange,
+   indigo, cyan, purple, pink, brown, gray, teal, yellow, green). This file maps
+   each hue to:
+     --hue-<name>        bars and chart marks (adapts to dark)
+     --hue-<name>-tile   icon tiles (same in both appearances, like Settings icons)
+     --hue-<name>-glyph  the glyph color on that tile (white; black on yellow)
+   Use them through src/lib/categories.ts (hueVar, tileVar, tileGlyphClass).
+
+   The nine design hues reuse the --cat-* tokens from tokens.css. Teal and yellow are
+   the spare hues for categories people create; they come from Apple's system
+   palette (systemTeal #30B0C7 / dark #40CBE0, systemYellow #FFCC00 / dark #FFD60A).
+   ========================================================================== */
+
+:root {
+  --hue-mint: var(--cat-groceries);
+  --hue-orange: var(--cat-eating);
+  --hue-indigo: var(--cat-housing);
+  --hue-cyan: var(--cat-transport);
+  --hue-purple: var(--cat-fun);
+  --hue-pink: var(--cat-shopping);
+  --hue-brown: var(--cat-education);
+  --hue-gray: var(--cat-other);
+  --hue-green: var(--cat-income);
+  --hue-teal: var(--cat-spare-teal);   /* #30B0C7 */
+  --hue-yellow: var(--cat-spare-yellow); /* #FFCC00 */
+
+  --hue-mint-tile: var(--cat-groceries-tile);
+  --hue-orange-tile: var(--cat-eating-tile);
+  --hue-indigo-tile: var(--cat-housing-tile);
+  --hue-cyan-tile: var(--cat-transport-tile);
+  --hue-purple-tile: var(--cat-fun-tile);
+  --hue-pink-tile: var(--cat-shopping-tile);
+  --hue-brown-tile: var(--cat-education-tile);
+  --hue-gray-tile: var(--cat-other-tile);
+  --hue-green-tile: var(--cat-income-tile);
+  --hue-teal-tile: #30B0C7;
+  --hue-yellow-tile: #FFCC00;
+}
+
+/* Dark appearance: only the mark colors of the spare hues need their own values;
+   the design hues inherit dark values through the --cat-* tokens. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hue-teal: #40CBE0;
+    --hue-yellow: #FFD60A;
+  }
+}
+:root[data-theme="dark"] {
+  --hue-teal: #40CBE0;
+  --hue-yellow: #FFD60A;
+}
+
+/* Glyph on a yellow tile: white would be ~1.6:1, so yellow takes black (§ 4.1). */
+@theme inline {
+  --color-tile-glyph-dark: #000000;
+}

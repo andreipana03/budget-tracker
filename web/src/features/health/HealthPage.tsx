@@ -1,33 +1,28 @@
+import { Screen } from '@/app/Screen'
+import { List, Row } from '@/components/ui/List'
+import { SkeletonRows } from '@/components/ui/States'
+
 import { useHealth } from './useHealth'
 
+/** /status — is the API up, and can it reach its database? */
 export function HealthPage() {
   const { data, isPending, isError } = useHealth()
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-bg p-4">
-      <section className="w-full max-w-sm rounded-lg bg-surface p-5">
-        <h1 className="text-headline">Budget Tracker</h1>
-        <p className="text-subhead text-label-2">System status</p>
-        <dl className="mt-4 space-y-2 text-body">
-          {isPending && <p className="text-label-2">Checking…</p>}
-          {isError && <StatusRow label="API" value="unreachable" healthy={false} />}
-          {data && (
-            <>
-              <StatusRow label="API" value={data.status} healthy={data.status === 'ok'} />
-              <StatusRow label="Database" value={data.database} healthy={data.database === 'up'} />
-            </>
-          )}
-        </dl>
-      </section>
-    </main>
+    <Screen title="Status" hideToolbarActions>
+      <h2 className="sr-only">System status</h2>
+      {isPending ? (
+        <SkeletonRows count={2} label="Checking" />
+      ) : (
+        <List>
+          <Row title="API" trailing={<StatusValue value={isError ? 'unreachable' : (data?.status ?? '—')} healthy={!isError && data?.status === 'ok'} />} />
+          {data && <Row title="Database" trailing={<StatusValue value={data.database} healthy={data.database === 'up'} />} />}
+        </List>
+      )}
+    </Screen>
   )
 }
 
-function StatusRow({ label, value, healthy }: { label: string; value: string; healthy: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <dt>{label}</dt>
-      <dd className={healthy ? 'text-positive' : 'text-negative'}>{value}</dd>
-    </div>
-  )
+function StatusValue({ value, healthy }: { value: string; healthy: boolean }) {
+  return <span className={healthy ? 'text-positive' : 'text-negative'}>{value}</span>
 }
