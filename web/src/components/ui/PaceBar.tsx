@@ -1,6 +1,38 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+
 import { hueVar } from '@/lib/categories'
 import { formatMinorNumber, formatMoney, useRegion } from '@/lib/format'
 import { cn } from '@/lib/utils'
+
+/* ---------- Grow-in once per screen per page load (design § 3 Motion) ----------
+   Bars grow from the leading edge on a screen's FIRST appearance only — never again on
+   re-render, refetch, month switch or tab switch. A bar opts in with an `animationKey`
+   (or inherits one from <PaceAnimationScope>); once any bar with that key has mounted,
+   later mounts with the same key render without the animation. Without a key the bar
+   keeps the old behaviour (grows on every mount). */
+const grownKeys = new Set<string>()
+const PaceAnimationContext = createContext<string | null>(null)
+
+/**
+ * Gives every PaceBar / MiniPace inside (e.g. BudgetRows) the same animation key, so a
+ * whole screen grows in once per page load.
+ *
+ *   <PaceAnimationScope id="home">…</PaceAnimationScope>
+ */
+export function PaceAnimationScope({ id, children }: { id: string; children: ReactNode }) {
+  return <PaceAnimationContext.Provider value={id}>{children}</PaceAnimationContext.Provider>
+}
+
+/** True when this mount should play the grow-in animation. */
+function useGrowOnce(animationKey?: string): boolean {
+  const scoped = useContext(PaceAnimationContext)
+  const key = animationKey ?? scoped
+  const [grow] = useState(() => key == null || !grownKeys.has(key))
+  useEffect(() => {
+    if (key != null) grownKeys.add(key)
+  }, [key])
+  return grow
+}
 
 export interface PaceSegmentInput {
   /** Category hue (`mint`, …). */
@@ -21,6 +53,11 @@ export interface PaceBarProps {
   marker?: number | null
   /** Desktop-only legend of category dots with whole amounts. Items: name + color + spent. */
   legend?: { name: string; color: string; spentMinor: number }[]
+  /**
+   * Grow in only the first time a bar with this key mounts in this page load (e.g. "home",
+   * "budgets"). Omit to grow on every mount. A surrounding <PaceAnimationScope> also sets it.
+   */
+  animationKey?: string
   className?: string
 }
 
@@ -32,8 +69,9 @@ export interface PaceBarProps {
  *   <PaceBar segments={home.segments.map(s => ({ color: s.category.color, amountMinor: s.amountMinor }))}
  *            spentMinor={t.spentMinor} budgetMinor={t.budgetMinor} currency="RON" marker={t.paceMarker} />
  */
-export function PaceBar({ segments, spentMinor, budgetMinor, currency, marker, legend, className }: PaceBarProps) {
+export function PaceBar({ segments, spentMinor, budgetMinor, currency, marker, legend, animationKey, className }: PaceBarProps) {
   const region = useRegion()
+  const grow = useGrowOnce(animationKey)
   const total = Math.max(budgetMinor, 1)
   const evenMinor = marker == null ? null : Math.round(marker * budgetMinor)
   const label =
@@ -51,7 +89,7 @@ export function PaceBar({ segments, spentMinor, budgetMinor, currency, marker, l
             .map((s, i) => (
               <span
                 key={`${s.color}-${i}`}
-                className="ui-grow-x h-full min-w-0.5"
+                className={cn('h-full min-w-0.5', grow && 'ui-grow-x')}
                 style={{
                   width: `${(Math.min(s.amountMinor, total) / total) * 100}%`,
                   background: hueVar(s.color),
@@ -116,6 +154,8 @@ export interface MiniPaceProps {
   fixed?: boolean
   /** Category hue. */
   color: string
+  /** See PaceBarProps.animationKey. */
+  animationKey?: string
   className?: string
 }
 
@@ -124,13 +164,14 @@ export interface MiniPaceProps {
  * desktop), fill in the category color, tick at `elapsed` for flexible categories.
  * Decorative: the row's text carries the numbers.
  */
-export function MiniPace({ spentMinor, limitMinor, elapsed, fixed, color, className }: MiniPaceProps) {
+export function MiniPace({ spentMinor, limitMinor, elapsed, fixed, color, animationKey, className }: MiniPaceProps) {
+  const grow = useGrowOnce(animationKey)
   const used = limitMinor && limitMinor > 0 ? Math.min(spentMinor / limitMinor, 1) : 0
   return (
     <div aria-hidden className={cn('relative mt-[7px] h-1.5 lg:h-2', className)}>
       <div className="h-full overflow-hidden rounded-full bg-chart-track">
         {used > 0 && (
-          <div className="ui-grow-x h-full rounded-full" style={{ width: `${used * 100}%`, background: hueVar(color) }} />
+          <div className={cn('h-full rounded-full', grow && 'ui-grow-x')} style={{ width: `${used * 100}%`, background: hueVar(color) }} />
         )}
       </div>
       {!fixed && elapsed != null && (
