@@ -780,9 +780,9 @@ type HealthResponseStatus string
 
 // Home defines model for Home.
 type Home struct {
-	// Attention Budgeted categories ranked by attention: over (largest amount over first), then ahead
-	// of pace (largest usedRatio − elapsed first), then by usedRatio with fixed ones last.
-	// Compact shows the first 4; desktop shows all.
+	// Attention Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
+	// ones lead), ties in category sort order. Compact Home shows the first 4 non-fixed ones;
+	// desktop shows all of them (matches the design renders).
 	Attention []BudgetLine `json:"attention"`
 	Budget    BudgetMonth  `json:"budget"`
 

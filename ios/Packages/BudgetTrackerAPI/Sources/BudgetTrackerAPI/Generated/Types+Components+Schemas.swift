@@ -2115,9 +2115,9 @@ extension Components {
         public struct Home: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Home/budget`.
             public var budget: Components.Schemas.BudgetMonth
-            /// Budgeted categories ranked by attention: over (largest amount over first), then ahead
-            /// of pace (largest usedRatio − elapsed first), then by usedRatio with fixed ones last.
-            /// Compact shows the first 4; desktop shows all.
+            /// Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
+            /// ones lead), ties in category sort order. Compact Home shows the first 4 non-fixed ones;
+            /// desktop shows all of them (matches the design renders).
             ///
             ///
             /// - Remark: Generated from `#/components/schemas/Home/attention`.
@@ -2144,7 +2144,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - budget:
-            ///   - attention: Budgeted categories ranked by attention: over (largest amount over first), then ahead
+            ///   - attention: Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
             ///   - pending: Subscription charges waiting for confirmation, oldest first.
             ///   - upcoming: The next 6 active subscription charges (expense and income), soonest first.
             ///   - recent: The 6 most recent posted transactions.
