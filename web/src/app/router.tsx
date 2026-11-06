@@ -1,35 +1,24 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
 
-import { ActivityPage } from '@/features/activity/ActivityPage'
-import { TransactionDetailPage } from '@/features/activity/TransactionDetailPage'
-import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
-import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
-import { SignInPage } from '@/features/auth/SignInPage'
-import { SignUpPage } from '@/features/auth/SignUpPage'
-import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage'
-import { BudgetsPage } from '@/features/budgets/BudgetsPage'
-import { CategoryDetailPage } from '@/features/budgets/CategoryDetailPage'
-import { HealthPage } from '@/features/health/HealthPage'
-import { HomePage } from '@/features/home/HomePage'
-import { InsightsPage } from '@/features/insights/InsightsPage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
-import { SubscriptionsPage } from '@/features/subscriptions/SubscriptionsPage'
 
 import { AppShell } from './AppShell'
 import { NotFoundPage } from './NotFoundPage'
 
-/** Signed-in screens, rendered inside the shell. Month lives in the URL as `?month=YYYY-MM`. */
+/**
+ * Signed-in screens, rendered inside the shell. Month lives in the URL as `?month=YYYY-MM`.
+ * Every screen is its own lazily loaded chunk, so the first load only fetches the shell.
+ */
 const appRoutes: RouteObject[] = [
-  { index: true, element: <HomePage /> },
-  { path: 'activity', element: <ActivityPage /> },
-  { path: 'activity/:id', element: <TransactionDetailPage /> },
-  { path: 'budgets', element: <BudgetsPage /> },
-  { path: 'budgets/:categoryId', element: <CategoryDetailPage /> },
-  { path: 'insights', element: <InsightsPage /> },
-  { path: 'subscriptions', element: <SubscriptionsPage /> },
-  { path: 'settings/*', element: <SettingsPage /> },
-  { path: 'status', element: <HealthPage /> },
+  { index: true, lazy: async () => ({ Component: (await import('@/features/home/HomePage')).HomePage }) },
+  { path: 'activity', lazy: async () => ({ Component: (await import('@/features/activity/ActivityPage')).ActivityPage }) },
+  { path: 'activity/:id', lazy: async () => ({ Component: (await import('@/features/activity/TransactionDetailPage')).TransactionDetailPage }) },
+  { path: 'budgets', lazy: async () => ({ Component: (await import('@/features/budgets/BudgetsPage')).BudgetsPage }) },
+  { path: 'budgets/:categoryId', lazy: async () => ({ Component: (await import('@/features/budgets/CategoryDetailPage')).CategoryDetailPage }) },
+  { path: 'insights', lazy: async () => ({ Component: (await import('@/features/insights/InsightsPage')).InsightsPage }) },
+  { path: 'subscriptions', lazy: async () => ({ Component: (await import('@/features/subscriptions/SubscriptionsPage')).SubscriptionsPage }) },
+  { path: 'settings/*', lazy: async () => ({ Component: (await import('@/features/settings/SettingsPage')).SettingsPage }) },
+  { path: 'status', lazy: async () => ({ Component: (await import('@/features/health/HealthPage')).HealthPage }) },
   { path: '*', element: <NotFoundPage /> },
 ]
 
@@ -44,11 +33,11 @@ const devRoutes: RouteObject[] = import.meta.env.DEV
 
 export const routes: RouteObject[] = [
   // Public
-  { path: 'sign-in', element: <SignInPage /> },
-  { path: 'sign-up', element: <SignUpPage /> },
-  { path: 'forgot-password', element: <ForgotPasswordPage /> },
-  { path: 'reset-password', element: <ResetPasswordPage /> },
-  { path: 'verify-email', element: <VerifyEmailPage /> },
+  { path: 'sign-in', lazy: async () => ({ Component: (await import('@/features/auth/SignInPage')).SignInPage }) },
+  { path: 'sign-up', lazy: async () => ({ Component: (await import('@/features/auth/SignUpPage')).SignUpPage }) },
+  { path: 'forgot-password', lazy: async () => ({ Component: (await import('@/features/auth/ForgotPasswordPage')).ForgotPasswordPage }) },
+  { path: 'reset-password', lazy: async () => ({ Component: (await import('@/features/auth/ResetPasswordPage')).ResetPasswordPage }) },
+  { path: 'verify-email', lazy: async () => ({ Component: (await import('@/features/auth/VerifyEmailPage')).VerifyEmailPage }) },
   ...devRoutes,
   // Protected
   {
