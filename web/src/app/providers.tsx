@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 
 import { ToastProvider } from '@/components/ui/Toast'
+import { AuthProvider } from '@/features/auth/AuthProvider'
+import { useAuth } from '@/features/auth/auth-context'
 import { isFinalError } from '@/lib/api/errors'
 import { RegionProvider } from '@/lib/format/region'
 
@@ -26,13 +28,19 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient)
   return (
     <QueryClientProvider client={queryClient}>
-      {/* ─── W-auth: wrap the tree below in <AuthProvider> here (it needs the QueryClient),
-             and pass the signed-in user's region to <RegionProvider region={me?.region}>. ─── */}
-      <RegionProvider>
-        <ToastProvider>
-          <AddSheetProvider>{children}</AddSheetProvider>
-        </ToastProvider>
-      </RegionProvider>
+      <AuthProvider>
+        <RegionFromUser>
+          <ToastProvider>
+            <AddSheetProvider>{children}</AddSheetProvider>
+          </ToastProvider>
+        </RegionFromUser>
+      </AuthProvider>
     </QueryClientProvider>
   )
+}
+
+/** Number formatting follows the signed-in person's region (User.region), else the browser's. */
+function RegionFromUser({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  return <RegionProvider region={user?.region}>{children}</RegionProvider>
 }
