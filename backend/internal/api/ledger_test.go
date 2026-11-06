@@ -192,9 +192,12 @@ func TestLedgerHousehold(t *testing.T) {
 
 	// Once there is a transaction the home currency is locked.
 	acc := e.account("Card", "RON", 0)
-	e.expense(acc.Id, e.category("groceries"), "2033-03-10", 1000, "RON", nil)
+	spent := e.expense(acc.Id, e.category("groceries"), "2033-03-10", 1000, "RON", nil)
 	e.must(http.StatusOK, http.MethodGet, "/household", nil, &h)
 	ledgerTEq(t, "can change", h.CanChangeHomeCurrency, false)
+	e.fails(http.StatusConflict, "home_currency_locked", http.MethodPatch, "/household", map[string]any{"homeCurrency": "EUR"})
+	// Deleting it doesn't unlock the currency: Undo would bring back amounts frozen in RON.
+	e.must(http.StatusNoContent, http.MethodDelete, "/transactions/"+spent.Id.String(), nil, nil)
 	e.fails(http.StatusConflict, "home_currency_locked", http.MethodPatch, "/household", map[string]any{"homeCurrency": "EUR"})
 	// Sending the current one is not a change.
 	e.must(http.StatusOK, http.MethodPatch, "/household", map[string]any{"homeCurrency": "RON"}, &h)
@@ -265,7 +268,7 @@ func TestLedgerAccounts(t *testing.T) {
 	ledgerTEq(t, "ron balance", list.Items[0].BalanceMinor, int64(7500))
 	ledgerTEq(t, "eur balance", list.Items[1].BalanceMinor, int64(4001))
 	ledgerTEq(t, "eur ≈", *list.Items[1].BalanceHomeMinor, int64(19925)) // 40.01 × 4.98 = 199.2498
-	ledgerTEq(t, "total", list.TotalHomeMinor, int64(7500+19925))           // the card isn't included
+	ledgerTEq(t, "total", list.TotalHomeMinor, int64(7500+19925))        // the card isn't included
 	ledgerTEq(t, "≈", list.TotalIsApproximate, true)
 	ledgerTEq(t, "home", list.HomeCurrency, "RON")
 
@@ -722,7 +725,7 @@ func TestLedgerSubscriptions(t *testing.T) {
 	duo := create(map[string]any{"kind": "expense", "title": "Duolingo", "amountMinor": 5999, "currency": "EUR",
 		"accountId": eur.Id, "categoryId": e.category("education"), "frequency": "yearly", "startsOn": "2032-03-20"})
 	ledgerTEq(t, "duo next", duo.NextDueOn.Format(time.DateOnly), "2033-03-20")
-	ledgerTEq(t, "duo home", *duo.AmountHomeMinor, int64(29875))   // 59.99 × 4.98 = 298.7502
+	ledgerTEq(t, "duo home", *duo.AmountHomeMinor, int64(29875))    // 59.99 × 4.98 = 298.7502
 	ledgerTEq(t, "duo monthly", *duo.MonthlyHomeMinor, int64(2490)) // 29875.02 / 12 = 2489.585
 
 	gym := create(map[string]any{"kind": "expense", "title": "Gym", "amountMinor": 1000, "currency": "RON",
@@ -827,4 +830,47 @@ func TestLedgerSubscriptions(t *testing.T) {
 	e.fails(http.StatusNotFound, "not_found", http.MethodDelete, "/subscriptions/"+gym.Id.String(), nil)
 	e.must(http.StatusOK, http.MethodGet, "/subscriptions", nil, &list)
 	ledgerTEq(t, "after delete", len(list.NextSevenDays)+len(list.Later)+len(list.Paused), 3)
+}
+
+// DB doc § 6: an edit that doesn't touch amount, currency, account or date keeps the
+// frozen amounts, even when a newer rate for that day has arrived since.
+func TestLedgerEditKeepsFrozenAmounts(t *testing.T) {
+	e := ledgerTSetup(t)
+	ctx := context.Background()
+	exec := func(sql string) {
+		if _, err := e.pool.Exec(ctx, sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 2037 is used by no other test.
+	exec(`INSERT INTO fx_rates (source, base_currency, quote_currency, rate_date, rate)
+	      VALUES ('BNR', 'RON', 'EUR', '2037-06-01', 5.0000) ON CONFLICT DO NOTHING`)
+	t.Cleanup(func() {
+		_, _ = e.pool.Exec(context.Background(), `DELETE FROM fx_rates WHERE rate_date BETWEEN '2037-06-01' AND '2037-06-02'`)
+	})
+
+	acc := e.account("Card", "RON", 0)
+	tx := e.expense(acc.Id, e.category("fun"), "2037-06-02", 1000, "EUR", nil) // Monday's rate: 10,00 € → 50,00 lei
+	ledgerTEq(t, "frozen", tx.HomeAmountMinor, int64(5000))
+
+	// Tuesday's rate arrives later that day.
+	exec(`INSERT INTO fx_rates (source, base_currency, quote_currency, rate_date, rate)
+	      VALUES ('BNR', 'RON', 'EUR', '2037-06-02', 5.2000) ON CONFLICT DO NOTHING`)
+
+	put := func(amount int64, title string) gen.Transaction {
+		var out gen.Transaction
+		e.must(http.StatusOK, http.MethodPut, "/transactions/"+tx.Id.String(), map[string]any{
+			"kind": "expense", "title": title, "occurredOn": "2037-06-02", "categoryId": tx.Category.Id,
+			"accountId": acc.Id, "amountMinor": amount, "currency": "EUR", "rowVersion": tx.RowVersion,
+		}, &out)
+		tx = out
+		return out
+	}
+	renamed := put(1000, "Steam")
+	ledgerTEq(t, "title edit keeps the home amount", renamed.HomeAmountMinor, int64(5000))
+	ledgerTEq(t, "title edit keeps the rate date", renamed.FxRateDate.Format(time.DateOnly), "2037-06-01")
+
+	changed := put(1001, "Steam")
+	ledgerTEq(t, "amount edit re-freezes", changed.HomeAmountMinor, int64(5205)) // 10,01 × 5,20 = 52,052
+	ledgerTEq(t, "with the newer rate", changed.FxRateDate.Format(time.DateOnly), "2037-06-02")
 }

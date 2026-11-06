@@ -57,7 +57,7 @@ export function BudgetSection({ household, user }: { household: Household; user:
           <SectionFooter>
             {household.canChangeHomeCurrency
               ? `Totals and budgets are in ${household.homeCurrency}. Accounts in other currencies are converted at the BNR rate.`
-              : `Totals and budgets are in ${household.homeCurrency}. It can’t change once you’ve added transactions or subscriptions.`}
+              : `Totals and budgets are in ${household.homeCurrency}. It can’t change once you’ve added transactions, subscriptions or budgets.`}
           </SectionFooter>
         </div>
 

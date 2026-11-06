@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { ToastProvider } from '@/components/ui/Toast'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { useAuth } from '@/features/auth/auth-context'
 import { isFinalError } from '@/lib/api/errors'
+import { useCurrencies } from '@/lib/api/queries'
+import { registerCurrencies } from '@/lib/format/money'
 import { RegionProvider } from '@/lib/format/region'
 
 import { AddSheetProvider } from './add-sheet'
@@ -42,5 +44,19 @@ export function AppProviders({ children }: { children: ReactNode }) {
 /** Number formatting follows the signed-in person's region (User.region), else the browser's. */
 function RegionFromUser({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  return <RegionProvider region={user?.region}>{children}</RegionProvider>
+  return (
+    <RegionProvider region={user?.region}>
+      {user && <CurrencyRegistry />}
+      {children}
+    </RegionProvider>
+  )
+}
+
+/** Teaches the money formatter the API's minor units for every currency (signed in only). */
+function CurrencyRegistry() {
+  const { data } = useCurrencies()
+  useEffect(() => {
+    if (data) registerCurrencies(data)
+  }, [data])
+  return null
 }

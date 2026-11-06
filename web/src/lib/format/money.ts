@@ -28,20 +28,34 @@ export interface MoneyOptions {
   approx?: boolean
 }
 
-const minorUnitsCache = new Map<string, number>()
+/**
+ * Digits after the decimal point per currency, exactly as the API stores amounts
+ * (`currencies.minor_units`). This must come from the API, not from Intl: CLDR says the
+ * Serbian dinar has 0 decimals while the database keeps 2, and guessing wrong would make
+ * every RSD amount 100× off. Seeded with the database's currencies (migration 00004) so
+ * the first render is right; registerCurrencies() adds whatever GET /currencies returns.
+ */
+const minorUnitsByCurrency = new Map<string, number>([
+  ...['RON', 'EUR', 'USD', 'GBP', 'CHF', 'HUF', 'PLN', 'CZK', 'MDL', 'RSD', 'UAH', 'TRY', 'SEK', 'NOK', 'DKK', 'CAD', 'AUD', 'CNY']
+    .map((code): [string, number] => [code, 2]),
+  ['JPY', 0],
+])
 
-/** Digits after the decimal point for a currency, from Intl: RON 2, EUR 2, JPY 0. */
+/** Remember the API's minor units (from GET /currencies). */
+export function registerCurrencies(currencies: ReadonlyArray<{ code: string; minorUnits: number }>) {
+  for (const c of currencies) minorUnitsByCurrency.set(c.code, c.minorUnits)
+}
+
+/** Digits after the decimal point for a currency: RON 2, EUR 2, JPY 0 (the API's values). */
 export function minorUnits(currency: string): number {
-  const cached = minorUnitsCache.get(currency)
-  if (cached !== undefined) return cached
-  let digits = 2
+  const known = minorUnitsByCurrency.get(currency)
+  if (known !== undefined) return known
+  // A currency the API hasn't told us about yet: Intl's guess, until it does.
   try {
-    digits = new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
+    return new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
   } catch {
-    digits = 2
+    return 2
   }
-  minorUnitsCache.set(currency, digits)
-  return digits
 }
 
 /** Integer minor units → whole major units, rounded half away from zero (exact integer math). */

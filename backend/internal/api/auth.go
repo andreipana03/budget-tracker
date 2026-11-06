@@ -277,19 +277,26 @@ func (s *Server) authGoogleTx(ctx context.Context, tx pgx.Tx, claims auth.Google
 			}
 
 		case dbx.IsNoRows(err):
+			// DB doc § 4: a new account from Google only for an address Google has
+			// verified. Otherwise anyone could claim someone else's email and keep a
+			// linked identity even after the real owner resets the password.
+			if !claims.EmailVerified {
+				return res, apierr.Unauthorized("google_email_unverified",
+					"Your Google account's email address isn't verified yet. Verify it with Google, or create an account with your email instead.")
+			}
 			var name *string
 			if n := strings.TrimSpace(claims.Name); n != "" {
 				name = ptr(authTruncate(n, 80))
 			}
 			created, err := signup.Create(ctx, tx, signup.Params{
-				Email: email, DisplayName: name, EmailVerified: claims.EmailVerified, Now: now,
+				Email: email, DisplayName: name, EmailVerified: true, Now: now,
 			})
 			if err != nil {
 				return res, err
 			}
 			if err := q.AuthInsertIdentity(ctx, store.AuthInsertIdentityParams{
 				UserID: created.UserID, Provider: store.AuthProviderGoogle, Subject: claims.Subject,
-				Email: emailPtr, EmailVerified: claims.EmailVerified, Now: now,
+				Email: emailPtr, EmailVerified: true, Now: now,
 			}); err != nil {
 				return res, err
 			}
@@ -330,8 +337,9 @@ func (s *Server) RefreshSession(ctx context.Context, request gen.RefreshSessionR
 	if err != nil {
 		return nil, err
 	}
+	fromBody := b.RefreshToken != nil && strings.TrimSpace(*b.RefreshToken) != ""
 	fail := func() error {
-		if platform == store.ClientPlatformWeb {
+		if platform == store.ClientPlatformWeb || !fromBody {
 			s.authClearRefreshCookie(ctx)
 		}
 		return errAuthSessionExpired
@@ -403,9 +411,12 @@ func (s *Server) RefreshSession(ctx context.Context, request gen.RefreshSessionR
 	if err != nil {
 		return nil, err
 	}
+	// Where the new refresh token goes follows the SESSION's platform, never the request:
+	// a web session's token stays in the HttpOnly cookie even if a script asks for
+	// platform "ios" (which would hand it the raw token in the JSON body).
 	// In the grace window newRaw is "": an access token only, and the cookie is left
 	// alone so a late response can't overwrite the rotated one.
-	resp, err := s.authResponse(ctx, s.q, user, platform, authIssued{sessionID: sess.ID, access: access, accessExp: exp, refresh: newRaw}, false)
+	resp, err := s.authResponse(ctx, s.q, user, sess.Platform, authIssued{sessionID: sess.ID, access: access, accessExp: exp, refresh: newRaw}, false)
 	if err != nil {
 		return nil, err
 	}

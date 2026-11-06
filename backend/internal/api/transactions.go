@@ -243,6 +243,8 @@ func (s *Server) ledgerResolveTx(ctx context.Context, q *store.Queries, h househ
 	}
 	if in.AmountMinor < 1 {
 		errs = append(errs, apierr.Field("amountMinor", "too_small", "Enter an amount above zero."))
+	} else if amountTooLarge(in.AmountMinor) {
+		errs = append(errs, tooLargeField("amountMinor"))
 	}
 	if _, err := s.ledgerCurrency(ctx, q, "currency", in.Currency, &errs); err != nil {
 		return res, err
@@ -270,6 +272,14 @@ func (s *Server) ledgerResolveTx(ctx context.Context, q *store.Queries, h househ
 	res.Note = ledgerNote(in.Note, &errs)
 	if err := ledgerErrs(errs); err != nil {
 		return res, err
+	}
+	// DB doc § 6: recompute only when amount, currency, account or date change. Rate
+	// changes after entry (e.g. today's BNR rate arriving at 13:30) never move a total.
+	if prev != nil && prev.AmountMinor == in.AmountMinor && prev.Currency == in.Currency &&
+		prev.AccountID == in.AccountID && prev.OccurredOn.Equal(in.OccurredOn) && prev.HomeCurrency == h.HomeCurrency {
+		res.Frozen = ledgerFrozen{AccountAmount: prev.AccountAmountMinor, HomeAmount: prev.HomeAmountMinor,
+			Rate: prev.FxRate, RateDate: prev.FxRateDate}
+		return res, nil
 	}
 	res.Frozen, err = ledgerFreeze(ctx, q, in.AmountMinor, in.Currency, res.Account.Currency, h.HomeCurrency, in.OccurredOn)
 	return res, err
@@ -559,6 +569,9 @@ func (s *Server) ConfirmTransaction(ctx context.Context, request gen.ConfirmTran
 			amount := *request.Body.AmountMinor
 			if amount < 1 {
 				return apierr.Validation(apierr.Field("amountMinor", "too_small", "Enter an amount above zero."))
+			}
+			if amountTooLarge(amount) {
+				return apierr.Validation(tooLargeField("amountMinor"))
 			}
 			fr, err := ledgerFreeze(ctx, q, amount, t.Currency, t.AccountCurrency, h.HomeCurrency, t.OccurredOn)
 			if err != nil {

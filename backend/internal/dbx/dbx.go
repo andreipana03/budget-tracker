@@ -18,6 +18,12 @@ func InTx(ctx context.Context, pool *pgxpool.Pool, fn func(tx pgx.Tx) error) (er
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() {
+		// A panic in fn must still end the transaction, or its pooled connection stays
+		// checked out forever. Roll back, then let the panic continue.
+		if p := recover(); p != nil {
+			_ = tx.Rollback(context.WithoutCancel(ctx))
+			panic(p)
+		}
 		if err != nil {
 			if rbErr := tx.Rollback(ctx); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
 				err = errors.Join(err, fmt.Errorf("roll back: %w", rbErr))

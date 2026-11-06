@@ -66,6 +66,8 @@ func (s *Server) SetBudgets(ctx context.Context, request gen.SetBudgetsRequestOb
 		ids = append(ids, it.CategoryId)
 		if it.AmountMinor != nil && *it.AmountMinor < 0 {
 			fields = append(fields, apierr.Field(fmt.Sprintf("items[%d].amountMinor", i), "invalid", "A limit can't be negative."))
+		} else if it.AmountMinor != nil && amountTooLarge(*it.AmountMinor) {
+			fields = append(fields, tooLargeField(fmt.Sprintf("items[%d].amountMinor", i)))
 		}
 	}
 

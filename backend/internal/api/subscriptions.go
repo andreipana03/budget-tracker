@@ -111,6 +111,8 @@ func (s *Server) ledgerResolveSub(ctx context.Context, q *store.Queries, h house
 	res.Note = ledgerNote(in.Note, &errs)
 	if in.AmountMinor < 1 {
 		errs = append(errs, apierr.Field("amountMinor", "too_small", "Enter an amount above zero."))
+	} else if amountTooLarge(in.AmountMinor) {
+		errs = append(errs, tooLargeField("amountMinor"))
 	}
 	if _, err := s.ledgerCurrency(ctx, q, "currency", in.Currency, &errs); err != nil {
 		return res, err

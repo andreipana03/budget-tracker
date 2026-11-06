@@ -110,13 +110,15 @@ func (s *Server) authClientFrom(ctx context.Context, platform gen.Platform, devi
 	return c, nil
 }
 
-// authClientIP is the caller's IP: the first X-Forwarded-For hop behind a trusted
-// proxy, else the connection's address.
+// authClientIP is the caller's IP. Behind a trusted proxy (TRUST_PROXY, one hop) it's the
+// LAST X-Forwarded-For entry: the one our proxy appended. Earlier entries come from the
+// client and can be anything, so trusting them would let anyone dodge per-IP rate limits.
+// Otherwise it's the connection's address.
 func authClientIP(r *http.Request, trustProxy bool) (netip.Addr, bool) {
 	if trustProxy {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			first, _, _ := strings.Cut(xff, ",")
-			if ip, err := netip.ParseAddr(strings.TrimSpace(first)); err == nil {
+		if values := r.Header.Values("X-Forwarded-For"); len(values) > 0 {
+			hops := strings.Split(values[len(values)-1], ",")
+			if ip, err := netip.ParseAddr(strings.TrimSpace(hops[len(hops)-1])); err == nil {
 				return ip.Unmap(), true
 			}
 		}

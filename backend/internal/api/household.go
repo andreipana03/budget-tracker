@@ -86,7 +86,7 @@ func (s *Server) UpdateHousehold(ctx context.Context, request gen.UpdateHousehol
 			}
 			if has {
 				return apierr.Conflict("home_currency_locked",
-					"The home currency can't change once you have transactions or subscriptions.")
+					"The home currency can't change once you have transactions, subscriptions or budgets.")
 			}
 		}
 		if _, err := q.LedgerUpdateHousehold(ctx, params); err != nil {

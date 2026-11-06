@@ -44,7 +44,7 @@ func (s *Server) GetFxQuote(ctx context.Context, request gen.GetFxQuoteRequestOb
 	if _, err := s.ledgerCurrency(ctx, s.q, "to", params.To, &errs); err != nil {
 		return nil, err
 	}
-	if params.AmountMinor != nil && *params.AmountMinor < 0 {
+	if params.AmountMinor != nil && (*params.AmountMinor < 0 || amountTooLarge(*params.AmountMinor)) {
 		errs = append(errs, apierr.Field("amountMinor", "invalid", "The amount can't be negative."))
 	}
 	if err := ledgerErrs(errs); err != nil {

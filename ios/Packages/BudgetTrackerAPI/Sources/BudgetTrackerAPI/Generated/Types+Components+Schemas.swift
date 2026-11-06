@@ -57,7 +57,7 @@ extension Components {
             /// Requests: bad_request, invalid_parameter, validation_failed (see `fields`), rate_limited.
             /// Auth: unauthorized, token_expired (refresh and retry), session_expired (sign in again),
             /// invalid_credentials, invalid_token (email link), invalid_google_token,
-            /// google_not_configured, identity_conflict, already_verified.
+            /// google_email_unverified, google_not_configured, identity_conflict, already_verified.
             /// Data: not_found, version_conflict, id_taken, email_taken, username_taken, name_taken,
             /// budget_exists, duplicate_occurrence, invalid_reference, not_pending,
             /// account_currency_locked, home_currency_locked, fx_rate_unavailable.
@@ -99,7 +99,7 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/FieldError/field`.
             public var field: Swift.String
-            /// required, invalid, invalid_format, too_short, too_long, too_small, out_of_range, taken,
+            /// required, invalid, invalid_format, too_short, too_long, too_small, too_large, out_of_range, taken,
             /// reserved, missing_uppercase, missing_lowercase, missing_digit, missing_symbol,
             /// same_as_username, not_found, archived, kind_mismatch, expense_only, not_expense,
             /// unsupported, before_start.
@@ -113,7 +113,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - field: The request field (camelCase), e.g. "password".
-            ///   - code: required, invalid, invalid_format, too_short, too_long, too_small, out_of_range, taken,
+            ///   - code: required, invalid, invalid_format, too_short, too_long, too_small, too_large, out_of_range, taken,
             ///   - message:
             public init(
                 field: Swift.String,

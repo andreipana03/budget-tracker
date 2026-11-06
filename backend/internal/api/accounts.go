@@ -86,6 +86,9 @@ func (s *Server) CreateAccount(ctx context.Context, request gen.CreateAccountReq
 		if _, err := s.ledgerCurrency(ctx, q, "currency", body.Currency, &errs); err != nil {
 			return err
 		}
+		if body.OpeningBalanceMinor != nil && amountTooLarge(*body.OpeningBalanceMinor) {
+			errs = append(errs, tooLargeField("openingBalanceMinor"))
+		}
 		if err := ledgerErrs(errs); err != nil {
 			return err
 		}
@@ -162,6 +165,9 @@ func (s *Server) UpdateAccount(ctx context.Context, request gen.UpdateAccountReq
 			if _, err := s.ledgerCurrency(ctx, q, "currency", body.Currency, &errs); err != nil {
 				return err
 			}
+		}
+		if amountTooLarge(body.OpeningBalanceMinor) {
+			errs = append(errs, tooLargeField("openingBalanceMinor"))
 		}
 		if err := ledgerErrs(errs); err != nil {
 			return err

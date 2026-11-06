@@ -225,9 +225,9 @@ SELECT pg_temp.expect('generated usernames keep only a–z, 0–9, dot, undersco
     (SELECT username = 'ana.popx' FROM users WHERE email = 'ana.pop+x@example.test'));
 SELECT pg_temp.expect('a local part shorter than 3 characters becomes "user"',
     (SELECT username = 'user' FROM users WHERE email = 'ab@example.test'));
-INSERT INTO users (email, username) VALUES ('tester@example.test', 'admin-test');
+INSERT INTO users (email, username) VALUES ('tester@example.test', 'schema-test-chosen-name');
 SELECT pg_temp.expect('a chosen username is kept as given',
-    (SELECT username = 'admin-test' FROM users WHERE email = 'tester@example.test'));
+    (SELECT username = 'schema-test-chosen-name' FROM users WHERE email = 'tester@example.test'));
 SELECT pg_temp.expect_error('usernames are stored lowercased',
     $$UPDATE users SET username = 'Ana' WHERE email = 'ana@other.test'$$, '23514');
 SELECT pg_temp.expect_error('usernames are at least 3 characters',

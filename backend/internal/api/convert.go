@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/andreipana03/budget-tracker/backend/internal/apierr"
 	"github.com/andreipana03/budget-tracker/backend/internal/budget"
 )
 
@@ -45,6 +46,19 @@ func numericString(n pgtype.Numeric) string {
 		return ""
 	}
 	return fmt.Sprint(v)
+}
+
+// maxAmountMinor caps every amount the API accepts: 10^15 minor units (10 trillion lei).
+// Far above any real budget, and it keeps sums and the subscription cost maths (× 52)
+// well inside int64.
+const maxAmountMinor int64 = 1_000_000_000_000_000
+
+// amountTooLarge reports whether |v| is above maxAmountMinor.
+func amountTooLarge(v int64) bool { return v > maxAmountMinor || v < -maxAmountMinor }
+
+// tooLargeField is the field error for amountTooLarge.
+func tooLargeField(field string) apierr.FieldError {
+	return apierr.Field(field, "too_large", "This amount is too large.")
 }
 
 func ptr[T any](v T) *T { return &v }

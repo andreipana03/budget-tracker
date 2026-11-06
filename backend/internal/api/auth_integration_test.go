@@ -814,6 +814,16 @@ func TestAuthGoogle(t *testing.T) {
 	env.google.add("tok-unverified", auth.GoogleClaims{Subject: "google-sub-" + testdb.RandomSuffix(), Email: other.email, EmailVerified: false})
 	env.do("POST", "/auth/google", map[string]any{"idToken": "tok-unverified", "platform": "web"}).expectError(http.StatusConflict, "email_taken")
 
+	// Unverified Google email nobody uses yet → no account is created (it could be someone else's address).
+	nobody := "nobody-" + testdb.RandomSuffix() + "@example.test"
+	env.google.add("tok-unverified-new", auth.GoogleClaims{Subject: "google-sub-" + testdb.RandomSuffix(), Email: nobody, EmailVerified: false})
+	env.do("POST", "/auth/google", map[string]any{"idToken": "tok-unverified-new", "platform": "web"}).
+		expectError(http.StatusUnauthorized, "google_email_unverified")
+	var created int
+	if err := env.pool.QueryRow(context.Background(), `SELECT count(*) FROM users WHERE email = $1`, nobody).Scan(&created); err != nil || created != 0 {
+		t.Fatalf("users with an unverified Google email: %d (%v)", created, err)
+	}
+
 	// Bad token.
 	env.do("POST", "/auth/google", map[string]any{"idToken": "forged", "platform": "web"}).expectError(http.StatusUnauthorized, "invalid_google_token")
 
@@ -854,11 +864,28 @@ func TestAuthClientIP(t *testing.T) {
 	if ip, _ := authClientIP(r, false); ip.String() != "198.51.100.7" {
 		t.Fatalf("untrusted: %v", ip)
 	}
-	if ip, _ := authClientIP(r, true); ip.String() != "203.0.113.9" {
+	// Trusted (one proxy hop): the last entry, which our proxy appended. The first one
+	// came from the client and can't be trusted.
+	if ip, _ := authClientIP(r, true); ip.String() != "10.0.0.1" {
 		t.Fatalf("trusted: %v", ip)
 	}
 	r.Header.Set("X-Forwarded-For", "garbage")
 	if ip, _ := authClientIP(r, true); ip.String() != "198.51.100.7" {
 		t.Fatalf("garbage XFF: %v", ip)
+	}
+}
+
+// A web session's refresh token must never come back in a JSON body, even when a script
+// asks for platform "ios" with the cookie: that would defeat the HttpOnly cookie.
+func TestAuthRefreshWebSessionNeverReturnsTokenInBody(t *testing.T) {
+	env := authTServer(t, nil)
+	s := env.register("web")
+
+	r := env.do("POST", "/auth/refresh", map[string]any{"platform": "ios"}, authTCookie(s.cookie)).expect(http.StatusOK)
+	if a := r.auth(); a.RefreshToken != nil {
+		t.Fatal("a web session's refresh token was returned in the body")
+	}
+	if c := r.cookie(); c == nil || c.Value == "" || c.Value == s.cookie || !c.HttpOnly {
+		t.Fatalf("the rotated token should go back into the HttpOnly cookie, got %v", c)
 	}
 }

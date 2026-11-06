@@ -48,6 +48,8 @@ describe('money', () => {
     expect(minorUnits('RON')).toBe(2)
     expect(minorUnits('EUR')).toBe(2)
     expect(minorUnits('JPY')).toBe(0)
+    // The API keeps 2 decimals for RSD even though CLDR/Intl says 0.
+    expect(minorUnits('RSD')).toBe(2)
   })
 
   it('formats minor units in the region', () => {
