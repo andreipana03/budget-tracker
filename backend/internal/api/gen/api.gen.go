@@ -710,9 +710,15 @@ type EntryKind string
 
 // Error defines model for Error.
 type Error struct {
-	// Code Stable machine-readable reason, e.g. validation_failed, invalid_credentials,
-	// session_expired, unauthorized, not_found, version_conflict, email_taken,
-	// username_taken, name_taken, fx_rate_unavailable, rate_limited, internal.
+	// Code Stable machine-readable reason. Clients branch on these, never on `message`.
+	// Requests: bad_request, invalid_parameter, validation_failed (see `fields`), rate_limited.
+	// Auth: unauthorized, token_expired (refresh and retry), session_expired (sign in again),
+	// invalid_credentials, invalid_token (email link), invalid_google_token,
+	// google_not_configured, identity_conflict, already_verified.
+	// Data: not_found, version_conflict, id_taken, email_taken, username_taken, name_taken,
+	// budget_exists, duplicate_occurrence, invalid_reference, not_pending,
+	// account_currency_locked, home_currency_locked, fx_rate_unavailable.
+	// Server: internal, not_implemented.
 	Code   string        `json:"code"`
 	Fields *[]FieldError `json:"fields,omitempty"`
 
@@ -722,7 +728,10 @@ type Error struct {
 
 // FieldError defines model for FieldError.
 type FieldError struct {
-	// Code e.g. required, too_short, too_long, invalid_format, missing_uppercase, missing_lowercase, missing_digit, missing_symbol, same_as_username, taken.
+	// Code required, invalid, invalid_format, too_short, too_long, too_small, out_of_range, taken,
+	// reserved, missing_uppercase, missing_lowercase, missing_digit, missing_symbol,
+	// same_as_username, not_found, archived, kind_mismatch, expense_only, not_expense,
+	// unsupported, before_start.
 	Code string `json:"code"`
 
 	// Field The request field (camelCase), e.g. "password".
