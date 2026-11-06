@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andreipana03/budget-tracker/backend/internal/api/gen"
 	"github.com/andreipana03/budget-tracker/backend/internal/apierr"
@@ -71,6 +73,13 @@ func NewRouter(server *Server, logger *slog.Logger, opts RouterOptions) http.Han
 		[]gen.StrictMiddlewareFunc{authenticate(opts.Authenticator), httpContext},
 		gen.StrictHTTPServerOptions{
 			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				// `format: email` fields fail while decoding; answer like any other bad field.
+				// Every request schema with such a field names it "email".
+				if errors.Is(err, openapi_types.ErrValidationEmail) {
+					writeErr(w, r, apierr.Validation(apierr.Field("email", "invalid_format",
+						"Enter an email address like name@example.com.")).Wrap(err))
+					return
+				}
 				writeErr(w, r, apierr.BadRequest("bad_request", "The request body isn't valid JSON for this endpoint.").Wrap(err))
 			},
 			ResponseErrorHandlerFunc: writeErr,

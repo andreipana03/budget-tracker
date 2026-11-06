@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/andreipana03/budget-tracker/backend/internal/api/gen"
-	"github.com/andreipana03/budget-tracker/backend/internal/apierr"
 	"github.com/andreipana03/budget-tracker/backend/internal/store"
 )
 
@@ -24,21 +24,69 @@ type subscriptionTotals struct {
 
 // pendingTransactions returns subscription charges waiting for confirmation, oldest first.
 func (s *Server) pendingTransactions(ctx context.Context, q *store.Queries, h householdInfo) ([]gen.Transaction, error) {
-	return nil, apierr.NotImplemented()
+	rows, err := q.LedgerPendingTransactions(ctx, h.ID)
+	if err != nil {
+		return nil, fmt.Errorf("pending transactions: %w", err)
+	}
+	out := make([]gen.Transaction, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, ledgerTransaction(r.Transaction, r.Category, r.Account))
+	}
+	return out, nil
 }
 
 // recentTransactions returns the household's latest posted transactions, newest first.
 func (s *Server) recentTransactions(ctx context.Context, q *store.Queries, h householdInfo, limit int) ([]gen.Transaction, error) {
-	return nil, apierr.NotImplemented()
+	rows, err := q.LedgerRecentTransactions(ctx, store.LedgerRecentTransactionsParams{HouseholdID: h.ID, RowLimit: int32(limit)})
+	if err != nil {
+		return nil, fmt.Errorf("recent transactions: %w", err)
+	}
+	out := make([]gen.Transaction, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, ledgerTransaction(r.Transaction, r.Category, r.Account))
+	}
+	return out, nil
 }
 
 // activeSubscriptions returns active subscriptions (expense and income), soonest first,
 // with amountHomeMinor, monthlyHomeMinor and daysUntilDue filled in for today.
 func (s *Server) activeSubscriptions(ctx context.Context, q *store.Queries, h householdInfo) ([]gen.Subscription, error) {
-	return nil, apierr.NotImplemented()
+	rows, err := s.ledgerSubRows(ctx, q, h, true)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]gen.Subscription, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, ledgerSubscription(r, h.Today))
+	}
+	return out, nil
 }
 
 // totalsOfSubscriptions sums the active expense subscriptions.
 func (s *Server) totalsOfSubscriptions(ctx context.Context, q *store.Queries, h householdInfo) (subscriptionTotals, error) {
-	return subscriptionTotals{}, apierr.NotImplemented()
+	rows, err := s.ledgerSubRows(ctx, q, h, true)
+	if err != nil {
+		return subscriptionTotals{}, err
+	}
+	return ledgerSubTotals(rows), nil
+}
+
+// ledgerSubRows loads the household's subscriptions (only active ones when activeOnly),
+// soonest due first.
+func (s *Server) ledgerSubRows(ctx context.Context, q *store.Queries, h householdInfo, activeOnly bool) ([]ledgerSubRow, error) {
+	rows, err := q.LedgerListSubscriptions(ctx, store.LedgerListSubscriptionsParams{
+		Today: h.Today, HouseholdID: h.ID, ActiveOnly: activeOnly,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list subscriptions: %w", err)
+	}
+	out := make([]ledgerSubRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, ledgerSubRow{
+			R: r.RecurringTransaction, A: r.Account, C: r.Category,
+			HomeRate: r.HomeRate, FromMinor: r.CurrencyMinorUnits, HomeMinor: r.HomeMinorUnits,
+			HomeCode: h.HomeCurrency,
+		})
+	}
+	return out, nil
 }
