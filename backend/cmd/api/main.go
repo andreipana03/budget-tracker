@@ -12,12 +12,13 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // household time zones work even without the OS zone database
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andreipana03/budget-tracker/backend/internal/api"
+	"github.com/andreipana03/budget-tracker/backend/internal/clock"
 	"github.com/andreipana03/budget-tracker/backend/internal/config"
-	"github.com/andreipana03/budget-tracker/backend/internal/store"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -47,10 +48,12 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	server := api.NewServer(store.New(pool), logger)
+	server := api.NewServer(api.Deps{Pool: pool, Logger: logger, Clock: clock.Real{}, Config: cfg})
 	httpServer := &http.Server{
-		Addr:              net.JoinHostPort("", cfg.Port),
-		Handler:           api.NewRouter(server, logger, cfg.CORSAllowedOrigins),
+		Addr: net.JoinHostPort("", cfg.Port),
+		Handler: api.NewRouter(server, logger, api.RouterOptions{
+			AllowedOrigins: cfg.CORSAllowedOrigins,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

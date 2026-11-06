@@ -45,10 +45,12 @@ INSERT INTO households (id) VALUES
 INSERT INTO household_members (household_id, user_id) VALUES
     ('00000000-0000-7000-8000-00000000a002', '00000000-0000-7000-8000-00000000a001'),
     ('00000000-0000-7000-8000-00000000b002', '00000000-0000-7000-8000-00000000b001');
-INSERT INTO accounts (id, household_id, name, currency) VALUES
-    ('00000000-0000-7000-8000-00000000a101', '00000000-0000-7000-8000-00000000a002', 'ING Card', 'RON'),
-    ('00000000-0000-7000-8000-00000000a102', '00000000-0000-7000-8000-00000000a002', 'Revolut',  'EUR'),
-    ('00000000-0000-7000-8000-00000000b101', '00000000-0000-7000-8000-00000000b002', 'BT Card',  'RON');
+-- Fixed opening date: the fixtures below are dated November 2026, and anything dated
+-- before an account's opening balance doesn't count toward it.
+INSERT INTO accounts (id, household_id, name, currency, opening_balance_on) VALUES
+    ('00000000-0000-7000-8000-00000000a101', '00000000-0000-7000-8000-00000000a002', 'ING Card', 'RON', '2026-10-01'),
+    ('00000000-0000-7000-8000-00000000a102', '00000000-0000-7000-8000-00000000a002', 'Revolut',  'EUR', '2026-10-01'),
+    ('00000000-0000-7000-8000-00000000b101', '00000000-0000-7000-8000-00000000b002', 'BT Card',  'RON', '2026-10-01');
 INSERT INTO fx_rates (source, base_currency, quote_currency, rate_date, rate) VALUES
     ('BNR', 'RON', 'EUR', '2020-01-06', 4.7800),
     ('BNR', 'RON', 'USD', '2020-01-06', 4.2700);
@@ -212,6 +214,48 @@ SELECT pg_temp.expect('a soft delete gets a new sync version, so other devices l
     (SELECT t.row_version > b.row_version FROM transactions t, before_delete b WHERE t.household_id = '00000000-0000-7000-8000-00000000a002' AND t.title = 'Lidl'));
 SELECT pg_temp.expect('households don''t share version counters',
     (SELECT change_seq FROM households WHERE id = '00000000-0000-7000-8000-00000000b002') = 14);
+
+-- Usernames ------------------------------------------------------------------------------
+SELECT pg_temp.expect('a user without a username gets one from their email',
+    (SELECT username = 'ana' FROM users WHERE id = '00000000-0000-7000-8000-00000000a001'));
+INSERT INTO users (email) VALUES ('ana@other.test'), ('ana.pop+x@example.test'), ('ab@example.test');
+SELECT pg_temp.expect('a taken username gets a number',
+    (SELECT username = 'ana2' FROM users WHERE email = 'ana@other.test'));
+SELECT pg_temp.expect('generated usernames keep only a–z, 0–9, dot, underscore and hyphen',
+    (SELECT username = 'ana.popx' FROM users WHERE email = 'ana.pop+x@example.test'));
+SELECT pg_temp.expect('a local part shorter than 3 characters becomes "user"',
+    (SELECT username = 'user' FROM users WHERE email = 'ab@example.test'));
+INSERT INTO users (email, username) VALUES ('tester@example.test', 'admin-test');
+SELECT pg_temp.expect('a chosen username is kept as given',
+    (SELECT username = 'admin-test' FROM users WHERE email = 'tester@example.test'));
+SELECT pg_temp.expect_error('usernames are stored lowercased',
+    $$UPDATE users SET username = 'Ana' WHERE email = 'ana@other.test'$$, '23514');
+SELECT pg_temp.expect_error('usernames are at least 3 characters',
+    $$UPDATE users SET username = 'an' WHERE email = 'ana@other.test'$$, '23514');
+SELECT pg_temp.expect_error('usernames can''t contain spaces or @',
+    $$UPDATE users SET username = 'ana pop@x' WHERE email = 'ana@other.test'$$, '23514');
+SELECT pg_temp.expect_error('usernames are unique',
+    $$UPDATE users SET username = 'ana' WHERE email = 'ana@other.test'$$, '23505');
+
+-- Exchange-rate helpers --------------------------------------------------------------------
+INSERT INTO fx_rates (source, base_currency, quote_currency, rate_date, rate)
+VALUES ('BNR', 'RON', 'JPY', '2020-01-06', 0.0310);
+SELECT pg_temp.expect('fx_convert_minor converts and rounds to the target''s minor units',
+    fx_convert_minor(999, 'EUR', 'RON', '2020-01-07') = 4775);
+SELECT pg_temp.expect('fx_convert_minor rounds half away from zero',
+    fx_convert_minor(50, 'USD', 'RON', '2020-01-07') = 214);
+SELECT pg_temp.expect('fx_convert_minor respects currencies without decimals (1.000 ¥ → 31,00 lei)',
+    fx_convert_minor(1000, 'JPY', 'RON', '2020-01-07') = 3100);
+SELECT pg_temp.expect('fx_convert_minor leaves same-currency amounts alone',
+    fx_convert_minor(1234, 'EUR', 'EUR', '2020-01-07') = 1234);
+SELECT pg_temp.expect('fx_convert_minor is NULL when a rate is missing',
+    fx_convert_minor(100, 'CHF', 'RON', '2020-01-07') IS NULL
+    AND fx_convert_minor(100, 'EUR', 'RON', '2019-12-31') IS NULL);
+SELECT pg_temp.expect('fx_quote gives the rate and the BNR day it comes from',
+    (SELECT rate = 4.78 AND rate_date = '2020-01-06' FROM fx_quote('EUR', 'RON', '2020-01-12')));
+SELECT pg_temp.expect('fx_quote: same currency is rate 1 with no date; missing is NULL',
+    (SELECT rate = 1 AND rate_date IS NULL FROM fx_quote('RON', 'RON', '2020-01-12'))
+    AND (SELECT rate IS NULL AND rate_date IS NULL FROM fx_quote('CHF', 'RON', '2020-01-12')));
 
 -- Deleting an account (GDPR / App Store) ------------------------------------------------
 DELETE FROM users WHERE id = '00000000-0000-7000-8000-00000000a001';

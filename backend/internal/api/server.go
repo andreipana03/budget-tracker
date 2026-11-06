@@ -1,42 +1,57 @@
 // Package api implements the HTTP handlers defined in api/openapi.yaml.
+//
+// Handlers live in one file per resource (auth.go, transactions.go, …). Protected
+// handlers start with `p, err := principal(ctx)` and scope every query by
+// p.HouseholdID. They return *apierr.Error for anything a client can act on.
 package api
 
 import (
-	"context"
 	"log/slog"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andreipana03/budget-tracker/backend/internal/api/gen"
+	"github.com/andreipana03/budget-tracker/backend/internal/clock"
+	"github.com/andreipana03/budget-tracker/backend/internal/config"
+	"github.com/andreipana03/budget-tracker/backend/internal/store"
 )
 
-const databaseCheckTimeout = 2 * time.Second
-
-// Queries is the subset of the generated store the handlers depend on.
-type Queries interface {
-	CountAppMetadata(ctx context.Context) (int64, error)
+// Deps is everything the handlers need. Pool may be nil in unit tests that only
+// exercise the health check.
+type Deps struct {
+	Pool   *pgxpool.Pool
+	Health HealthChecker
+	Logger *slog.Logger
+	Clock  clock.Clock
+	Config config.Config
 }
 
 // Server implements the generated gen.StrictServerInterface.
 type Server struct {
-	queries Queries
-	logger  *slog.Logger
+	pool   *pgxpool.Pool
+	q      *store.Queries
+	health HealthChecker
+	logger *slog.Logger
+	clock  clock.Clock
+	cfg    config.Config
 }
 
 var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewServer creates a Server.
-func NewServer(queries Queries, logger *slog.Logger) *Server {
-	return &Server{queries: queries, logger: logger}
-}
-
-// GetHealth reports whether the API can reach its migrated database.
-func (s *Server) GetHealth(ctx context.Context, _ gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
-	ctx, cancel := context.WithTimeout(ctx, databaseCheckTimeout)
-	defer cancel()
-
-	if _, err := s.queries.CountAppMetadata(ctx); err != nil {
-		s.logger.WarnContext(ctx, "database health check failed", "error", err)
-		return gen.GetHealth503JSONResponse{Status: gen.Degraded, Database: gen.Down}, nil
+func NewServer(d Deps) *Server {
+	s := &Server{pool: d.Pool, health: d.Health, logger: d.Logger, clock: d.Clock, cfg: d.Config}
+	if d.Pool != nil {
+		s.q = store.New(d.Pool)
+		if s.health == nil {
+			s.health = s.q
+		}
 	}
-	return gen.GetHealth200JSONResponse{Status: gen.Ok, Database: gen.Up}, nil
+	if s.clock == nil {
+		s.clock = clock.Real{}
+	}
+	if s.logger == nil {
+		s.logger = slog.New(slog.DiscardHandler)
+	}
+	return s
 }

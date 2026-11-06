@@ -21,6 +21,640 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an account with email, username and password, and sign in
+         * @description Creates the user, their household (RON, Europe/Bucharest, month start day 1, 13 default
+         *     categories) and a "Cash" account, sends a verification email, and signs in.
+         *     Errors: 409 `email_taken` / `username_taken`, 422 `validation_failed` (see `fields`).
+         */
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in with an email or username and a password
+         * @description `identifier` containing "@" is treated as an email, otherwise as a username.
+         *     Wrong identifier or password: 401 `invalid_credentials` (same answer for both).
+         *     Too many attempts: 429 `rate_limited`.
+         */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in or sign up with a Google ID token
+         * @description The web app gets the ID token from Google Identity Services; iOS from GoogleSignIn.
+         *     Linking follows the DB doc § 4: known Google account → that user; verified email of an
+         *     existing user → linked to them; otherwise a new user (username generated from the email).
+         *     503 `google_not_configured` when the server has no Google client ids.
+         */
+        post: operations["signInWithGoogle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange a refresh token for a new access token
+         * @description Web: the refresh token comes from the HttpOnly cookie and a rotated one is set the same way.
+         *     iOS: send `refreshToken` in the body; the rotated one comes back in the body.
+         *     401 `session_expired` when the token is unknown, expired, revoked or was reused.
+         */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign out this device
+         * @description Revokes the session of the presented refresh token (cookie or body) and clears the cookie. Always succeeds.
+         */
+        post: operations["signOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm an email address with the token from the verification link
+         * @description 400 `invalid_token` when the token is unknown, used, expired or for an old address.
+         */
+        post: operations["verifyEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email a password reset link
+         * @description Answers 204 whether or not the address belongs to a user.
+         */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password with the token from the reset link
+         * @description Signs out every session of the user. 400 `invalid_token`, 422 `validation_failed`.
+         */
+        post: operations["resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/username-available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check whether a username can be used */
+        get: operations["checkUsername"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in user */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete the account and all of its data
+         * @description Irreversible. Removes the user, their sessions and, when they're its last member, the household with all its data.
+         */
+        delete: operations["deleteMe"];
+        options?: never;
+        head?: never;
+        /**
+         * Change name, username or formatting region
+         * @description 409 `username_taken`, 422 `validation_failed`.
+         */
+        patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the password, or set one for a Google-only account
+         * @description `currentPassword` is required when the user has a password (401 `invalid_credentials` if wrong).
+         *     Signs out every other session. 422 `validation_failed` for a weak password.
+         */
+        post: operations["changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send the email verification link again
+         * @description 409 `already_verified` when the address is already verified. 429 `rate_limited`.
+         */
+        post: operations["resendVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in user's household settings */
+        get: operations["getHousehold"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change home currency, time zone or the day budget months start
+         * @description The home currency can change only while the household has no transactions and no
+         *     subscriptions (409 `home_currency_locked`). 422 `validation_failed` for an unknown time zone.
+         */
+        patch: operations["updateHousehold"];
+        trace?: never;
+    };
+    "/currencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Currencies the app supports */
+        get: operations["listCurrencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fx/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The BNR rate between two currencies on a day, optionally applied to an amount
+         * @description 422 `fx_rate_unavailable` when there is no rate on or before that day.
+         */
+        get: operations["getFxQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounts with their current balances and the ≈ total in the home currency */
+        get: operations["listAccounts"];
+        put?: never;
+        /**
+         * Add an account
+         * @description 409 `name_taken`. Idempotent when the same `id` is sent again.
+         */
+        post: operations["createAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace an account's editable fields
+         * @description 409 `version_conflict`, 409 `name_taken`, 409 `account_currency_locked` (currency can't
+         *     change once the account has transactions or subscriptions).
+         */
+        put: operations["updateAccount"];
+        post?: never;
+        /** Delete an account, or archive it when it has history */
+        delete: operations["deleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expense and income categories, in sort order */
+        get: operations["listCategories"];
+        put?: never;
+        /**
+         * Add a category
+         * @description 409 `name_taken`. Idempotent when the same `id` is sent again.
+         */
+        post: operations["createCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace a category's editable fields
+         * @description 409 `version_conflict`, 409 `name_taken`. `kind` never changes.
+         */
+        put: operations["updateCategory"];
+        post?: never;
+        /** Delete a category, or archive it when it has history */
+        delete: operations["deleteCategory"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transactions, newest first, a page at a time
+         * @description Ordered by occurredOn desc, occurredAt desc, id desc. Soft-deleted rows are never returned.
+         *     `dayTotals` covers every day that appears in `items` (computed over all matching
+         *     transactions of that day, not only this page).
+         */
+        get: operations["listTransactions"];
+        put?: never;
+        /**
+         * Add an expense or income
+         * @description Converts and freezes the account-currency and home-currency amounts with that day's BNR
+         *     rate (422 `fx_rate_unavailable` if missing). With `repeat`, also creates a subscription
+         *     starting on `occurredOn` and links this transaction as its first occurrence.
+         *     Idempotent when the same `id` is sent again.
+         */
+        post: operations["createTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** One transaction */
+        get: operations["getTransaction"];
+        /**
+         * Replace a transaction's editable fields
+         * @description Recomputes the frozen amounts when amount, currency, account or date change. 409 `version_conflict`.
+         */
+        put: operations["updateTransaction"];
+        post?: never;
+        /** Delete a transaction (soft; restore it with Undo) */
+        delete: operations["deleteTransaction"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo a delete */
+        post: operations["restoreTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a pending subscription charge (optionally with the real amount)
+         * @description 409 `not_pending` when the transaction isn't pending.
+         */
+        post: operations["confirmTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a pending subscription charge as not happened this time
+         * @description 409 `not_pending` when the transaction isn't pending.
+         */
+        post: operations["skipTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Limits, spending and pace for every expense category in a budget month */
+        get: operations["getBudgets"];
+        /**
+         * Set monthly limits for several categories at once
+         * @description `ongoing`: the limit applies from `month` on, until a later ongoing limit replaces it
+         *     (`amountMinor: null` removes the limit from that month on). `single_month`: only that
+         *     month (`amountMinor: null` removes the override). 422 for income categories.
+         */
+        put: operations["setBudgets"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Everything the Home screen shows for a budget month */
+        get: operations["getHome"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/months": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Budget months that have data, newest first (for the month picker) */
+        get: operations["listMonths"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Spending trends for a period */
+        get: operations["getInsights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Repeating payments and income, with totals and what's due soon */
+        get: operations["listSubscriptions"];
+        put?: never;
+        /**
+         * Add a subscription
+         * @description Idempotent when the same `id` is sent again.
+         */
+        post: operations["createSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace a subscription's editable fields (isActive false pauses it)
+         * @description 409 `version_conflict`. Past transactions are never changed.
+         */
+        put: operations["updateSubscription"];
+        post?: never;
+        /** Delete a subscription (its past transactions stay) */
+        delete: operations["deleteSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -31,9 +665,827 @@ export interface components {
             /** @enum {string} */
             database: "up" | "down";
         };
+        Error: {
+            /**
+             * @description Stable machine-readable reason, e.g. validation_failed, invalid_credentials,
+             *     session_expired, unauthorized, not_found, version_conflict, email_taken,
+             *     username_taken, name_taken, fx_rate_unavailable, rate_limited, internal.
+             */
+            code: string;
+            /** @description A sentence a person can read, in the app's voice. */
+            message: string;
+            fields?: components["schemas"]["FieldError"][];
+        };
+        FieldError: {
+            /** @description The request field (camelCase), e.g. "password". */
+            field: string;
+            /** @description e.g. required, too_short, too_long, invalid_format, missing_uppercase, missing_lowercase, missing_digit, missing_symbol, same_as_username, taken. */
+            code: string;
+            message: string;
+        };
+        DeleteResult: {
+            /** @enum {string} */
+            outcome: "deleted" | "archived";
+        };
+        /** @example RON */
+        CurrencyCode: string;
+        /**
+         * @description A budget month, YYYY-MM.
+         * @example 2026-11
+         */
+        Month: string;
+        /** @enum {string} */
+        EntryKind: "expense" | "income";
+        /** @enum {string} */
+        TransactionStatus: "posted" | "pending" | "skipped";
+        /** @enum {string} */
+        AccountType: "cash" | "bank" | "credit_card" | "savings" | "other";
+        /**
+         * @description A hue from the design's category palette; clients map it to their color tokens.
+         * @enum {string}
+         */
+        CategoryColor: "mint" | "orange" | "indigo" | "cyan" | "purple" | "pink" | "brown" | "gray" | "teal" | "yellow" | "green";
+        /** @enum {string} */
+        Frequency: "weekly" | "monthly" | "yearly";
+        /** @enum {string} */
+        Platform: "web" | "ios";
+        /** @enum {string} */
+        AuthProvider: "google" | "apple";
+        RegisterRequest: {
+            /** Format: email */
+            email: string;
+            /** @description 3–30 characters of a–z, 0–9, ".", "_" and "-". Compared case-insensitively. */
+            username: string;
+            /** @description 8–128 characters with an uppercase letter, a lowercase letter, a digit and a symbol. */
+            password: string;
+            platform: components["schemas"]["Platform"];
+            deviceName?: string;
+        };
+        LoginRequest: {
+            /** @description Email address or username. */
+            identifier: string;
+            password: string;
+            platform: components["schemas"]["Platform"];
+            deviceName?: string;
+        };
+        GoogleSignInRequest: {
+            idToken: string;
+            platform: components["schemas"]["Platform"];
+            deviceName?: string;
+        };
+        RefreshRequest: {
+            platform: components["schemas"]["Platform"];
+            /** @description iOS only. The web app's token is in its cookie. */
+            refreshToken?: string;
+        };
+        LogoutRequest: {
+            /** @description iOS only. The web app's token is in its cookie. */
+            refreshToken?: string;
+        };
+        TokenRequest: {
+            token: string;
+        };
+        ForgotPasswordRequest: {
+            /** Format: email */
+            email: string;
+        };
+        ResetPasswordRequest: {
+            token: string;
+            password: string;
+        };
+        AuthResponse: {
+            /** @description JWT for the Authorization header (Bearer). Valid for 15 minutes. */
+            accessToken: string;
+            /** Format: date-time */
+            accessTokenExpiresAt: string;
+            /** @description iOS only (keep it in the Keychain). Never sent to the web app, which gets an HttpOnly cookie. */
+            refreshToken?: string;
+            user: components["schemas"]["User"];
+            isNewUser: boolean;
+        };
+        UsernameAvailability: {
+            /** @description The username as it would be stored (lowercased, trimmed). */
+            username: string;
+            available: boolean;
+            /** @enum {string} */
+            reason?: "taken" | "invalid" | "reserved";
+        };
+        User: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            emailVerified: boolean;
+            username: string;
+            displayName: string | null;
+            /**
+             * @description ISO 3166 region that decides number and currency formatting ("RO" → 1.234,29 lei).
+             * @example RO
+             */
+            region: string;
+            hasPassword: boolean;
+            linkedProviders: components["schemas"]["AuthProvider"][];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UpdateMeRequest: {
+            /** @description Empty string clears it. */
+            displayName?: string;
+            username?: string;
+            region?: string;
+        };
+        ChangePasswordRequest: {
+            currentPassword?: string;
+            newPassword: string;
+        };
+        Household: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /** @description IANA time zone, e.g. Europe/Bucharest. */
+            timezone: string;
+            /** @description 1–28. With 10, the "November" budget runs 10 Nov – 9 Dec. */
+            monthStartDay: number;
+            canChangeHomeCurrency: boolean;
+            /**
+             * Format: date
+             * @description Today's date in the household's time zone.
+             */
+            today: string;
+            currentMonth: components["schemas"]["Month"];
+        };
+        UpdateHouseholdRequest: {
+            name?: string;
+            homeCurrency?: components["schemas"]["CurrencyCode"];
+            timezone?: string;
+            monthStartDay?: number;
+        };
+        Currency: {
+            code: components["schemas"]["CurrencyCode"];
+            name: string;
+            minorUnits: number;
+        };
+        FxQuote: {
+            from: components["schemas"]["CurrencyCode"];
+            to: components["schemas"]["CurrencyCode"];
+            /** Format: date */
+            on: string;
+            /**
+             * @description Units of `to` per one unit of `from`, as a decimal string.
+             * @example 4.9800000000
+             */
+            rate: string;
+            /**
+             * Format: date
+             * @description The BNR day the rate comes from; null when from = to.
+             */
+            rateDate: string | null;
+            /**
+             * Format: int64
+             * @description The requested amount converted to `to`, in its minor units.
+             */
+            amountMinor?: number;
+        };
+        AccountRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            type: components["schemas"]["AccountType"];
+            currency: components["schemas"]["CurrencyCode"];
+        };
+        Account: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            type: components["schemas"]["AccountType"];
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @description Balance on openingBalanceOn (may be negative for a credit card).
+             */
+            openingBalanceMinor: number;
+            /** Format: date */
+            openingBalanceOn: string;
+            includeInTotal: boolean;
+            sortOrder: number;
+            archived: boolean;
+            /**
+             * Format: int64
+             * @description Current balance in the account's currency (may be negative).
+             */
+            balanceMinor: number;
+            /**
+             * Format: int64
+             * @description ≈ the balance in the home currency at today's rate; null if no rate.
+             */
+            balanceHomeMinor: number | null;
+            /** Format: int64 */
+            rowVersion: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AccountList: {
+            items: components["schemas"]["Account"][];
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @description Sum of non-archived accounts with includeInTotal, in the home currency.
+             */
+            totalHomeMinor: number;
+            /** @description True when the total includes converted balances (show "≈"). */
+            totalIsApproximate: boolean;
+        };
+        CreateAccountRequest: {
+            /** Format: uuid */
+            id?: string;
+            name: string;
+            type: components["schemas"]["AccountType"];
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @default 0
+             */
+            openingBalanceMinor: number;
+            /**
+             * Format: date
+             * @description Defaults to the household's today.
+             */
+            openingBalanceOn?: string;
+            /** @default true */
+            includeInTotal: boolean;
+            sortOrder?: number;
+        };
+        UpdateAccountRequest: {
+            name: string;
+            type: components["schemas"]["AccountType"];
+            currency: components["schemas"]["CurrencyCode"];
+            /** Format: int64 */
+            openingBalanceMinor: number;
+            /** Format: date */
+            openingBalanceOn: string;
+            includeInTotal: boolean;
+            sortOrder: number;
+            archived: boolean;
+            /** Format: int64 */
+            rowVersion: number;
+        };
+        CategoryRef: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EntryKind"];
+            name: string;
+            color: components["schemas"]["CategoryColor"];
+            /** @description Phosphor icon name in kebab case, e.g. shopping-cart. */
+            icon: string;
+            isFixed: boolean;
+        };
+        Category: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EntryKind"];
+            name: string;
+            color: components["schemas"]["CategoryColor"];
+            icon: string;
+            isFixed: boolean;
+            sortOrder: number;
+            /** @description Set on the 13 defaults (groceries, eating_out, …), null on categories people create. */
+            systemKey: string | null;
+            archived: boolean;
+            /** Format: int64 */
+            rowVersion: number;
+        };
+        CreateCategoryRequest: {
+            /** Format: uuid */
+            id?: string;
+            kind: components["schemas"]["EntryKind"];
+            name: string;
+            color: components["schemas"]["CategoryColor"];
+            icon: string;
+            /** @default false */
+            isFixed: boolean;
+            sortOrder?: number;
+        };
+        UpdateCategoryRequest: {
+            name: string;
+            color: components["schemas"]["CategoryColor"];
+            icon: string;
+            isFixed: boolean;
+            sortOrder: number;
+            archived: boolean;
+            /** Format: int64 */
+            rowVersion: number;
+        };
+        Transaction: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EntryKind"];
+            status: components["schemas"]["TransactionStatus"];
+            /** @description Merchant or short description ("Lidl"). */
+            title: string;
+            note: string | null;
+            /**
+             * Format: date
+             * @description Calendar day in the household's time zone.
+             */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt: string | null;
+            category: components["schemas"]["CategoryRef"];
+            account: components["schemas"]["AccountRef"];
+            /**
+             * Format: int64
+             * @description As entered, in `currency`.
+             */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Format: int64 */
+            accountAmountMinor: number;
+            accountCurrency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @description Frozen at entry; what budgets and totals add up.
+             */
+            homeAmountMinor: number;
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /** @description homeCurrency per one unit of currency ("1" when they match). */
+            fxRate: string;
+            /** Format: date */
+            fxRateDate: string | null;
+            /**
+             * Format: uuid
+             * @description The subscription that created or matches this transaction.
+             */
+            recurringId: string | null;
+            /** Format: date */
+            recurringOccurrenceOn: string | null;
+            /** Format: int64 */
+            rowVersion: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        DayTotal: {
+            /** Format: date */
+            date: string;
+            /**
+             * Format: int64
+             * @description Posted expenses of the day matching the filters, in the home currency.
+             */
+            expenseHomeMinor: number;
+            /** Format: int64 */
+            incomeHomeMinor: number;
+        };
+        TransactionPage: {
+            items: components["schemas"]["Transaction"][];
+            dayTotals: components["schemas"]["DayTotal"][];
+            /** @description Pass as `cursor` to get the next page; null on the last page. */
+            nextCursor: string | null;
+            homeCurrency: components["schemas"]["CurrencyCode"];
+        };
+        RepeatRule: {
+            frequency: components["schemas"]["Frequency"];
+            /** @default 1 */
+            intervalCount: number;
+        };
+        CreateTransactionRequest: {
+            /** Format: uuid */
+            id?: string;
+            kind: components["schemas"]["EntryKind"];
+            /** @description Merchant or note. Defaults to the category's name when empty. */
+            title?: string;
+            note?: string;
+            /** Format: date */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: int64 */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            repeat?: components["schemas"]["RepeatRule"];
+        };
+        UpdateTransactionRequest: {
+            kind: components["schemas"]["EntryKind"];
+            title: string;
+            note?: string;
+            /** Format: date */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: int64 */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Format: int64 */
+            rowVersion: number;
+        };
+        ConfirmTransactionRequest: {
+            /**
+             * Format: int64
+             * @description The amount actually charged, if it differs (same currency).
+             */
+            amountMinor?: number;
+        };
+        BudgetPeriod: {
+            month: components["schemas"]["Month"];
+            /** Format: date */
+            startsOn: string;
+            /**
+             * Format: date
+             * @description First day after the period.
+             */
+            endsBefore: string;
+            daysInPeriod: number;
+            /** @enum {string} */
+            state: "past" | "current" | "future";
+            /**
+             * Format: date
+             * @description The household's today.
+             */
+            today: string;
+            /**
+             * Format: double
+             * @description (today − start + 1) / daysInPeriod for the current month; 1 for past, 0 for future months.
+             */
+            elapsed: number;
+            /** @description Days left including today (0 for past months). */
+            daysLeft: number;
+        };
+        /** @enum {string} */
+        BudgetStatus: "over" | "ahead" | "on_track";
+        BudgetLine: {
+            category: components["schemas"]["CategoryRef"];
+            /**
+             * Format: int64
+             * @description The month's limit in the home currency; null when the category has no budget.
+             */
+            limitMinor: number | null;
+            /**
+             * Format: int64
+             * @description Posted expenses in the period, home currency.
+             */
+            spentMinor: number;
+            /**
+             * Format: int64
+             * @description limit − spent (negative when over); null without a limit.
+             */
+            leftMinor: number | null;
+            /**
+             * @description Which kind of budget row sets the limit this month; null without one.
+             * @enum {string|null}
+             */
+            scope: "ongoing" | "single_month" | null;
+            status: components["schemas"]["BudgetStatus"];
+            /**
+             * Format: double
+             * @description spent / limit (may exceed 1); null without a limit.
+             */
+            usedRatio: number | null;
+        };
+        BudgetTotals: {
+            /**
+             * Format: int64
+             * @description Sum of all limits.
+             */
+            budgetMinor: number;
+            /**
+             * Format: int64
+             * @description Spent in budgeted categories.
+             */
+            spentMinor: number;
+            /** Format: int64 */
+            leftMinor: number;
+            /** Format: int64 */
+            fixedLimitMinor: number;
+            /** Format: int64 */
+            flexLimitMinor: number;
+            /** Format: int64 */
+            flexSpentMinor: number;
+            /**
+             * Format: int64
+             * @description (flex limits − flex spent) / days left including today, rounded to whole major units; null outside the current month.
+             */
+            perDayMinor: number | null;
+            /**
+             * Format: int64
+             * @description flex limits × elapsed − flex spent (negative = ahead of pace); null outside the current month.
+             */
+            underPaceMinor: number | null;
+            /**
+             * Format: double
+             * @description Where the "Today" tick sits on the total bar, 0–1; null outside the current month.
+             */
+            paceMarker: number | null;
+            status: components["schemas"]["BudgetStatus"];
+        };
+        PaceSegment: {
+            category: components["schemas"]["CategoryRef"];
+            /**
+             * Format: int64
+             * @description min(spent, limit) for the category; segment width = amount / budgetMinor.
+             */
+            amountMinor: number;
+        };
+        BudgetMonth: {
+            period: components["schemas"]["BudgetPeriod"];
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /** @description False when no expense category has a limit this month. */
+            hasBudget: boolean;
+            totals: components["schemas"]["BudgetTotals"];
+            /** @description Pace bar segments, fixed categories first, then flexible in sort order. */
+            segments: components["schemas"]["PaceSegment"][];
+            /** @description Over first, then by usedRatio, highest first. */
+            flexible: components["schemas"]["BudgetLine"][];
+            fixed: components["schemas"]["BudgetLine"][];
+            /** @description Active expense categories without a limit this month (with what was spent). */
+            unbudgeted: components["schemas"]["BudgetLine"][];
+        };
+        SetBudgetsRequest: {
+            month: components["schemas"]["Month"];
+            /** @enum {string} */
+            scope: "ongoing" | "single_month";
+            items: components["schemas"]["BudgetLimitInput"][];
+        };
+        BudgetLimitInput: {
+            /** Format: uuid */
+            categoryId: string;
+            /**
+             * Format: int64
+             * @description Limit in the home currency's minor units; null removes it.
+             */
+            amountMinor: number | null;
+        };
+        Home: {
+            budget: components["schemas"]["BudgetMonth"];
+            /**
+             * @description Budgeted categories ranked by attention: over (largest amount over first), then ahead
+             *     of pace (largest usedRatio − elapsed first), then by usedRatio with fixed ones last.
+             *     Compact shows the first 4; desktop shows all.
+             */
+            attention: components["schemas"]["BudgetLine"][];
+            /** @description Subscription charges waiting for confirmation, oldest first. */
+            pending: components["schemas"]["Transaction"][];
+            /** @description The next 6 active subscription charges (expense and income), soonest first. */
+            upcoming: components["schemas"]["Subscription"][];
+            /** @description The 6 most recent posted transactions. */
+            recent: components["schemas"]["Transaction"][];
+            pendingCount: number;
+            /** @description Active subscriptions due within the next 7 days. */
+            dueSoonCount: number;
+        };
+        MonthSummary: {
+            month: components["schemas"]["Month"];
+            /**
+             * Format: int64
+             * @description All posted expenses in the period, home currency.
+             */
+            spentMinor: number;
+            /** Format: int64 */
+            budgetMinor: number | null;
+        };
+        MonthList: {
+            current: components["schemas"]["Month"];
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /** @description From the next month back to the first month with data, newest first. */
+            items: components["schemas"]["MonthSummary"][];
+        };
+        /**
+         * @description week = 7 daily bars (Mon–Sun); month = daily bars of the budget month; six_months / year = monthly bars.
+         * @default six_months
+         * @enum {string}
+         */
+        InsightsPeriod: "week" | "month" | "six_months" | "year";
+        InsightsBar: {
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsBefore: string;
+            /** Format: int64 */
+            spentMinor: number;
+            /** @description The bar containing today (drawn in tint). */
+            isCurrent: boolean;
+            /**
+             * Format: int64
+             * @description Projection for the current month bar (dashed outline); null otherwise.
+             */
+            projectedMinor: number | null;
+        };
+        InsightsHeadline: {
+            /**
+             * Format: int64
+             * @description Spent so far in the current unit (week, or budget month).
+             */
+            currentMinor: number;
+            /**
+             * Format: int64
+             * @description Spent in the previous unit up to the same point; null when there's no data.
+             */
+            previousMinor: number | null;
+            /**
+             * Format: double
+             * @description (current − previous) / previous; null without previous data.
+             */
+            changeRatio: number | null;
+            /**
+             * Format: date
+             * @description First day of the unit compared against (e.g. 2026-10-01 → "October").
+             */
+            comparedTo: string;
+        };
+        CategorySpend: {
+            category: components["schemas"]["CategoryRef"];
+            /** Format: int64 */
+            spentMinor: number;
+            /**
+             * Format: double
+             * @description Share of all spending in the range, 0–1.
+             */
+            share: number;
+        };
+        BiggestChange: {
+            category: components["schemas"]["CategoryRef"];
+            /** Format: int64 */
+            currentMinor: number;
+            /** Format: int64 */
+            previousMinor: number;
+            /** Format: double */
+            changeRatio: number;
+            /** Format: date */
+            comparedTo: string;
+            /** @description The category's spending per bar of the range (last one is the current unit). */
+            spark: number[];
+        };
+        BiggestDay: {
+            /** Format: date */
+            date: string;
+            /** Format: int64 */
+            spentMinor: number;
+            /** @description One category when it was ≥ 50% of the day, otherwise the top two. */
+            topCategories: components["schemas"]["CategoryRef"][];
+        };
+        SubscriptionsHighlight: {
+            /** Format: int64 */
+            perMonthMinor: number;
+            activeCount: number;
+            isApproximate: boolean;
+            next?: components["schemas"]["Subscription"];
+        };
+        Insights: {
+            period: components["schemas"]["InsightsPeriod"];
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsBefore: string;
+            bars: components["schemas"]["InsightsBar"][];
+            /**
+             * Format: int64
+             * @description Average of completed bars with data (needs at least 2); null otherwise.
+             */
+            averageMinor: number | null;
+            headline: components["schemas"]["InsightsHeadline"];
+            /** @description Spending per category over the whole range, largest first. */
+            byCategory: components["schemas"]["CategorySpend"][];
+            biggestChange?: components["schemas"]["BiggestChange"];
+            biggestDay?: components["schemas"]["BiggestDay"];
+            subscriptions: components["schemas"]["SubscriptionsHighlight"];
+        };
+        Subscription: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EntryKind"];
+            title: string;
+            note: string | null;
+            /** Format: int64 */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @description ≈ amount in the home currency at today's rate (same as amountMinor when no conversion); null if no rate.
+             */
+            amountHomeMinor: number | null;
+            /**
+             * Format: int64
+             * @description ≈ cost per month in the home currency (weekly × 52/12, yearly ÷ 12, ÷ intervalCount); null if no rate.
+             */
+            monthlyHomeMinor: number | null;
+            account: components["schemas"]["AccountRef"];
+            category: components["schemas"]["CategoryRef"];
+            frequency: components["schemas"]["Frequency"];
+            intervalCount: number;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            nextDueOn: string;
+            /** Format: date */
+            endsOn: string | null;
+            /** @description nextDueOn − the household's today (0 = today). */
+            daysUntilDue: number;
+            isActive: boolean;
+            /** Format: int64 */
+            rowVersion: number;
+        };
+        SubscriptionList: {
+            homeCurrency: components["schemas"]["CurrencyCode"];
+            /**
+             * Format: int64
+             * @description ≈ monthly cost of active expense subscriptions, home currency.
+             */
+            perMonthMinor: number;
+            /** Format: int64 */
+            perYearMinor: number;
+            /** @description Active expense subscriptions. */
+            activeCount: number;
+            /** @description True when the totals include converted amounts (show "≈"). */
+            isApproximate: boolean;
+            /**
+             * Format: double
+             * @description perMonth / this month's total budget, 0–1; null without a budget.
+             */
+            shareOfBudget: number | null;
+            /** @description Active subscriptions due within 7 days, soonest first. */
+            nextSevenDays: components["schemas"]["Subscription"][];
+            /**
+             * Format: int64
+             * @description ≈ total of the expense ones due within 7 days, home currency.
+             */
+            nextSevenDaysHomeMinor: number;
+            /** @description The other active subscriptions, soonest first. */
+            later: components["schemas"]["Subscription"][];
+            paused: components["schemas"]["Subscription"][];
+            /** @description Charges waiting for confirmation. */
+            pendingCount: number;
+        };
+        CreateSubscriptionRequest: {
+            /** Format: uuid */
+            id?: string;
+            kind: components["schemas"]["EntryKind"];
+            title: string;
+            note?: string;
+            /** Format: int64 */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            categoryId: string;
+            frequency: components["schemas"]["Frequency"];
+            /** @default 1 */
+            intervalCount: number;
+            /**
+             * Format: date
+             * @description First charge. Past dates are fine; the job doesn't backfill before today.
+             */
+            startsOn: string;
+            /** Format: date */
+            endsOn?: string;
+        };
+        UpdateSubscriptionRequest: {
+            title: string;
+            note?: string;
+            /** Format: int64 */
+            amountMinor: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            categoryId: string;
+            frequency: components["schemas"]["Frequency"];
+            intervalCount: number;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn?: string | null;
+            isActive: boolean;
+            /** Format: int64 */
+            rowVersion: number;
+        };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Something went wrong; `code` says what */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
+    parameters: {
+        Id: string;
+        /** @description Budget month as YYYY-MM. Defaults to the household's current budget month. */
+        MonthQuery: components["schemas"]["Month"];
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -67,6 +1519,1037 @@ export interface operations {
                     "application/json": components["schemas"]["HealthResponse"];
                 };
             };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in as the new user */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signInWithGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in (`isNewUser` says whether the account was just created) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description A fresh access token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed out */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    verifyEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"];
+            };
+        };
+        responses: {
+            /** @description The email address is verified */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description If the address has an account, a link is on its way */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description The password is changed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    checkUsername: {
+        parameters: {
+            query: {
+                username: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether the username is free and valid */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsernameAvailability"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The signed-in user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description The password is changed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    resendVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A new link is on its way */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Household"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHouseholdRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated household */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Household"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listCurrencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every supported currency */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"][];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getFxQuote: {
+        parameters: {
+            query: {
+                from: components["schemas"]["CurrencyCode"];
+                to: components["schemas"]["CurrencyCode"];
+                /** @description Defaults to the household's today. */
+                on?: string;
+                amountMinor?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rate (and the converted amount when one was given) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FxQuote"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listAccounts: {
+        parameters: {
+            query?: {
+                includeArchived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household's accounts, in sort order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The new account */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What happened to the account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listCategories: {
+        parameters: {
+            query?: {
+                includeArchived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household's categories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The new category */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated category */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What happened to the category */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listTransactions: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["EntryKind"];
+                status?: components["schemas"]["TransactionStatus"];
+                categoryId?: string;
+                accountId?: string;
+                /** @description A budget month (its period honours the household's month start day). */
+                month?: components["schemas"]["Month"];
+                /** @description First day to include. */
+                from?: string;
+                /** @description Last day to include. */
+                to?: string;
+                /** @description Case-insensitive search in title and note. */
+                q?: string;
+                /** @description The `nextCursor` of the previous page. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of transactions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description The new transaction */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The transaction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated transaction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    restoreTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The restored transaction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    confirmTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConfirmTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description The transaction, now posted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    skipTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The transaction, now skipped */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getBudgets: {
+        parameters: {
+            query?: {
+                /** @description Budget month as YYYY-MM. Defaults to the household's current budget month. */
+                month?: components["parameters"]["MonthQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The budget month */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetMonth"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    setBudgets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBudgetsRequest"];
+            };
+        };
+        responses: {
+            /** @description The budget month after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetMonth"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getHome: {
+        parameters: {
+            query?: {
+                /** @description Budget month as YYYY-MM. Defaults to the household's current budget month. */
+                month?: components["parameters"]["MonthQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Home screen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Home"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listMonths: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The months */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getInsights: {
+        parameters: {
+            query?: {
+                period?: components["schemas"]["InsightsPeriod"];
+                /** @description Limit everything to one expense category (category detail screen). */
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The insights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscriptions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description The new subscription */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated subscription */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
         };
     };
 }

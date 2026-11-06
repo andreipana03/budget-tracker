@@ -8,7 +8,9 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"net/netip"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -57,6 +59,28 @@ func (ns NullAccountType) Value() (driver.Value, error) {
 	return string(ns.AccountType), nil
 }
 
+func (e AccountType) Valid() bool {
+	switch e {
+	case AccountTypeCash,
+		AccountTypeBank,
+		AccountTypeCreditCard,
+		AccountTypeSavings,
+		AccountTypeOther:
+		return true
+	}
+	return false
+}
+
+func AllAccountTypeValues() []AccountType {
+	return []AccountType{
+		AccountTypeCash,
+		AccountTypeBank,
+		AccountTypeCreditCard,
+		AccountTypeSavings,
+		AccountTypeOther,
+	}
+}
+
 type AuthMethod string
 
 const (
@@ -101,6 +125,26 @@ func (ns NullAuthMethod) Value() (driver.Value, error) {
 	return string(ns.AuthMethod), nil
 }
 
+func (e AuthMethod) Valid() bool {
+	switch e {
+	case AuthMethodPassword,
+		AuthMethodGoogle,
+		AuthMethodApple,
+		AuthMethodPasskey:
+		return true
+	}
+	return false
+}
+
+func AllAuthMethodValues() []AuthMethod {
+	return []AuthMethod{
+		AuthMethodPassword,
+		AuthMethodGoogle,
+		AuthMethodApple,
+		AuthMethodPasskey,
+	}
+}
+
 type AuthProvider string
 
 const (
@@ -141,6 +185,22 @@ func (ns NullAuthProvider) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.AuthProvider), nil
+}
+
+func (e AuthProvider) Valid() bool {
+	switch e {
+	case AuthProviderGoogle,
+		AuthProviderApple:
+		return true
+	}
+	return false
+}
+
+func AllAuthProviderValues() []AuthProvider {
+	return []AuthProvider{
+		AuthProviderGoogle,
+		AuthProviderApple,
+	}
 }
 
 type BudgetScope string
@@ -185,6 +245,22 @@ func (ns NullBudgetScope) Value() (driver.Value, error) {
 	return string(ns.BudgetScope), nil
 }
 
+func (e BudgetScope) Valid() bool {
+	switch e {
+	case BudgetScopeOngoing,
+		BudgetScopeSingleMonth:
+		return true
+	}
+	return false
+}
+
+func AllBudgetScopeValues() []BudgetScope {
+	return []BudgetScope{
+		BudgetScopeOngoing,
+		BudgetScopeSingleMonth,
+	}
+}
+
 type ClientPlatform string
 
 const (
@@ -225,6 +301,22 @@ func (ns NullClientPlatform) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.ClientPlatform), nil
+}
+
+func (e ClientPlatform) Valid() bool {
+	switch e {
+	case ClientPlatformWeb,
+		ClientPlatformIos:
+		return true
+	}
+	return false
+}
+
+func AllClientPlatformValues() []ClientPlatform {
+	return []ClientPlatform{
+		ClientPlatformWeb,
+		ClientPlatformIos,
+	}
 }
 
 type EntryKind string
@@ -269,6 +361,22 @@ func (ns NullEntryKind) Value() (driver.Value, error) {
 	return string(ns.EntryKind), nil
 }
 
+func (e EntryKind) Valid() bool {
+	switch e {
+	case EntryKindExpense,
+		EntryKindIncome:
+		return true
+	}
+	return false
+}
+
+func AllEntryKindValues() []EntryKind {
+	return []EntryKind{
+		EntryKindExpense,
+		EntryKindIncome,
+	}
+}
+
 type HouseholdRole string
 
 const (
@@ -309,6 +417,22 @@ func (ns NullHouseholdRole) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.HouseholdRole), nil
+}
+
+func (e HouseholdRole) Valid() bool {
+	switch e {
+	case HouseholdRoleOwner,
+		HouseholdRoleMember:
+		return true
+	}
+	return false
+}
+
+func AllHouseholdRoleValues() []HouseholdRole {
+	return []HouseholdRole{
+		HouseholdRoleOwner,
+		HouseholdRoleMember,
+	}
 }
 
 type RecurrenceFrequency string
@@ -354,6 +478,24 @@ func (ns NullRecurrenceFrequency) Value() (driver.Value, error) {
 	return string(ns.RecurrenceFrequency), nil
 }
 
+func (e RecurrenceFrequency) Valid() bool {
+	switch e {
+	case RecurrenceFrequencyWeekly,
+		RecurrenceFrequencyMonthly,
+		RecurrenceFrequencyYearly:
+		return true
+	}
+	return false
+}
+
+func AllRecurrenceFrequencyValues() []RecurrenceFrequency {
+	return []RecurrenceFrequency{
+		RecurrenceFrequencyWeekly,
+		RecurrenceFrequencyMonthly,
+		RecurrenceFrequencyYearly,
+	}
+}
+
 type TransactionStatus string
 
 const (
@@ -395,6 +537,24 @@ func (ns NullTransactionStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.TransactionStatus), nil
+}
+
+func (e TransactionStatus) Valid() bool {
+	switch e {
+	case TransactionStatusPosted,
+		TransactionStatusPending,
+		TransactionStatusSkipped:
+		return true
+	}
+	return false
+}
+
+func AllTransactionStatusValues() []TransactionStatus {
+	return []TransactionStatus{
+		TransactionStatusPosted,
+		TransactionStatusPending,
+		TransactionStatusSkipped,
+	}
 }
 
 type VerificationPurpose string
@@ -439,6 +599,22 @@ func (ns NullVerificationPurpose) Value() (driver.Value, error) {
 	return string(ns.VerificationPurpose), nil
 }
 
+func (e VerificationPurpose) Valid() bool {
+	switch e {
+	case VerificationPurposeEmailVerification,
+		VerificationPurposePasswordReset:
+		return true
+	}
+	return false
+}
+
+func AllVerificationPurposeValues() []VerificationPurpose {
+	return []VerificationPurpose{
+		VerificationPurposeEmailVerification,
+		VerificationPurposePasswordReset,
+	}
+}
+
 type WebauthnCeremony string
 
 const (
@@ -481,27 +657,43 @@ func (ns NullWebauthnCeremony) Value() (driver.Value, error) {
 	return string(ns.WebauthnCeremony), nil
 }
 
+func (e WebauthnCeremony) Valid() bool {
+	switch e {
+	case WebauthnCeremonyRegistration,
+		WebauthnCeremonyAuthentication:
+		return true
+	}
+	return false
+}
+
+func AllWebauthnCeremonyValues() []WebauthnCeremony {
+	return []WebauthnCeremony{
+		WebauthnCeremonyRegistration,
+		WebauthnCeremonyAuthentication,
+	}
+}
+
 type Account struct {
-	ID                  pgtype.UUID
-	HouseholdID         pgtype.UUID
+	ID                  uuid.UUID
+	HouseholdID         uuid.UUID
 	Name                string
 	Type                AccountType
 	Currency            string
 	OpeningBalanceMinor int64
-	OpeningBalanceOn    pgtype.Date
+	OpeningBalanceOn    time.Time
 	IncludeInTotal      bool
 	SortOrder           int32
-	ArchivedAt          pgtype.Timestamptz
-	CreatedBy           pgtype.UUID
+	ArchivedAt          *time.Time
+	CreatedBy           *uuid.UUID
 	RowVersion          int64
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
-	DeletedAt           pgtype.Timestamptz
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           *time.Time
 }
 
 type AccountBalance struct {
-	AccountID    pgtype.UUID
-	HouseholdID  pgtype.UUID
+	AccountID    uuid.UUID
+	HouseholdID  uuid.UUID
 	Currency     string
 	BalanceMinor int64
 }
@@ -509,40 +701,40 @@ type AccountBalance struct {
 type AppMetadatum struct {
 	Key       string
 	Value     string
-	CreatedAt pgtype.Timestamptz
+	CreatedAt time.Time
 }
 
 type Budget struct {
-	ID           pgtype.UUID
-	HouseholdID  pgtype.UUID
-	CategoryID   pgtype.UUID
+	ID           uuid.UUID
+	HouseholdID  uuid.UUID
+	CategoryID   uuid.UUID
 	CategoryKind EntryKind
 	Scope        BudgetScope
-	Month        pgtype.Date
-	AmountMinor  pgtype.Int8
-	CreatedBy    pgtype.UUID
+	Month        time.Time
+	AmountMinor  *int64
+	CreatedBy    *uuid.UUID
 	RowVersion   int64
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-	DeletedAt    pgtype.Timestamptz
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    *time.Time
 }
 
 type Category struct {
-	ID          pgtype.UUID
-	HouseholdID pgtype.UUID
+	ID          uuid.UUID
+	HouseholdID uuid.UUID
 	Kind        EntryKind
 	Name        string
 	Color       string
 	Icon        string
 	IsFixed     bool
 	SortOrder   int32
-	SystemKey   pgtype.Text
-	ArchivedAt  pgtype.Timestamptz
-	CreatedBy   pgtype.UUID
+	SystemKey   *string
+	ArchivedAt  *time.Time
+	CreatedBy   *uuid.UUID
 	RowVersion  int64
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-	DeletedAt   pgtype.Timestamptz
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time
 }
 
 type Currency struct {
@@ -555,97 +747,97 @@ type FxRate struct {
 	Source        string
 	BaseCurrency  string
 	QuoteCurrency string
-	RateDate      pgtype.Date
+	RateDate      time.Time
 	Rate          pgtype.Numeric
-	FetchedAt     pgtype.Timestamptz
+	FetchedAt     time.Time
 }
 
 type Household struct {
-	ID            pgtype.UUID
+	ID            uuid.UUID
 	Name          string
 	HomeCurrency  string
 	Timezone      string
 	MonthStartDay int16
 	ChangeSeq     int64
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type HouseholdMember struct {
-	HouseholdID pgtype.UUID
-	UserID      pgtype.UUID
+	HouseholdID uuid.UUID
+	UserID      uuid.UUID
 	Role        HouseholdRole
-	JoinedAt    pgtype.Timestamptz
+	JoinedAt    time.Time
 }
 
 type Passkey struct {
-	ID              pgtype.UUID
-	UserID          pgtype.UUID
+	ID              uuid.UUID
+	UserID          uuid.UUID
 	CredentialID    []byte
 	PublicKey       []byte
 	AttestationType string
-	Aaguid          pgtype.UUID
+	Aaguid          *uuid.UUID
 	SignCount       int64
 	Transports      []string
 	BackupEligible  bool
 	BackupState     bool
 	Name            string
-	CreatedAt       pgtype.Timestamptz
-	LastUsedAt      pgtype.Timestamptz
+	CreatedAt       time.Time
+	LastUsedAt      *time.Time
 }
 
 type RecurringTransaction struct {
-	ID              pgtype.UUID
-	HouseholdID     pgtype.UUID
+	ID              uuid.UUID
+	HouseholdID     uuid.UUID
 	Kind            EntryKind
 	Title           string
-	Note            pgtype.Text
+	Note            *string
 	AmountMinor     int64
 	Currency        string
-	AccountID       pgtype.UUID
+	AccountID       uuid.UUID
 	AccountCurrency string
-	CategoryID      pgtype.UUID
+	CategoryID      uuid.UUID
 	Frequency       RecurrenceFrequency
 	IntervalCount   int16
-	StartsOn        pgtype.Date
-	NextDueOn       pgtype.Date
-	EndsOn          pgtype.Date
+	StartsOn        time.Time
+	NextDueOn       time.Time
+	EndsOn          *time.Time
 	IsActive        bool
-	CreatedBy       pgtype.UUID
+	CreatedBy       *uuid.UUID
 	RowVersion      int64
-	CreatedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
-	DeletedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
 }
 
 type Session struct {
-	ID                       pgtype.UUID
-	UserID                   pgtype.UUID
+	ID                       uuid.UUID
+	UserID                   uuid.UUID
 	RefreshTokenHash         []byte
 	PreviousRefreshTokenHash []byte
-	RotatedAt                pgtype.Timestamptz
+	RotatedAt                time.Time
 	Platform                 ClientPlatform
-	DeviceName               pgtype.Text
-	UserAgent                pgtype.Text
+	DeviceName               *string
+	UserAgent                *string
 	IpAddress                *netip.Addr
 	AuthMethod               AuthMethod
-	CreatedAt                pgtype.Timestamptz
-	LastUsedAt               pgtype.Timestamptz
-	ExpiresAt                pgtype.Timestamptz
-	RevokedAt                pgtype.Timestamptz
+	CreatedAt                time.Time
+	LastUsedAt               time.Time
+	ExpiresAt                time.Time
+	RevokedAt                *time.Time
 }
 
 type Transaction struct {
-	ID                    pgtype.UUID
-	HouseholdID           pgtype.UUID
+	ID                    uuid.UUID
+	HouseholdID           uuid.UUID
 	Kind                  EntryKind
 	Status                TransactionStatus
 	Title                 string
-	Note                  pgtype.Text
-	OccurredOn            pgtype.Date
-	OccurredAt            pgtype.Timestamptz
-	CategoryID            pgtype.UUID
-	AccountID             pgtype.UUID
+	Note                  *string
+	OccurredOn            time.Time
+	OccurredAt            *time.Time
+	CategoryID            uuid.UUID
+	AccountID             uuid.UUID
 	AccountCurrency       string
 	AmountMinor           int64
 	Currency              string
@@ -653,77 +845,78 @@ type Transaction struct {
 	HomeCurrency          string
 	HomeAmountMinor       int64
 	FxRate                pgtype.Numeric
-	FxRateDate            pgtype.Date
-	RecurringID           pgtype.UUID
-	RecurringOccurrenceOn pgtype.Date
-	CreatedBy             pgtype.UUID
+	FxRateDate            *time.Time
+	RecurringID           *uuid.UUID
+	RecurringOccurrenceOn *time.Time
+	CreatedBy             *uuid.UUID
 	RowVersion            int64
-	CreatedAt             pgtype.Timestamptz
-	UpdatedAt             pgtype.Timestamptz
-	DeletedAt             pgtype.Timestamptz
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	DeletedAt             *time.Time
 }
 
 type Transfer struct {
-	ID              pgtype.UUID
-	HouseholdID     pgtype.UUID
-	FromAccountID   pgtype.UUID
+	ID              uuid.UUID
+	HouseholdID     uuid.UUID
+	FromAccountID   uuid.UUID
 	FromCurrency    string
 	FromAmountMinor int64
-	ToAccountID     pgtype.UUID
+	ToAccountID     uuid.UUID
 	ToCurrency      string
 	ToAmountMinor   int64
-	OccurredOn      pgtype.Date
-	OccurredAt      pgtype.Timestamptz
-	Note            pgtype.Text
-	CreatedBy       pgtype.UUID
+	OccurredOn      time.Time
+	OccurredAt      *time.Time
+	Note            *string
+	CreatedBy       *uuid.UUID
 	RowVersion      int64
-	CreatedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
-	DeletedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
 }
 
 type User struct {
-	ID                pgtype.UUID
+	ID                uuid.UUID
 	Email             string
-	EmailVerifiedAt   pgtype.Timestamptz
-	PasswordHash      pgtype.Text
-	PasswordChangedAt pgtype.Timestamptz
-	DisplayName       pgtype.Text
+	EmailVerifiedAt   *time.Time
+	PasswordHash      *string
+	PasswordChangedAt *time.Time
+	DisplayName       *string
 	Locale            string
 	Region            string
-	CreatedAt         pgtype.Timestamptz
-	UpdatedAt         pgtype.Timestamptz
-	LastSignInAt      pgtype.Timestamptz
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	LastSignInAt      *time.Time
+	Username          string
 }
 
 type UserIdentity struct {
-	ID                    pgtype.UUID
-	UserID                pgtype.UUID
+	ID                    uuid.UUID
+	UserID                uuid.UUID
 	Provider              AuthProvider
 	ProviderSubject       string
-	Email                 pgtype.Text
+	Email                 *string
 	EmailVerified         bool
 	RefreshTokenEncrypted []byte
-	CreatedAt             pgtype.Timestamptz
-	LastUsedAt            pgtype.Timestamptz
+	CreatedAt             time.Time
+	LastUsedAt            *time.Time
 }
 
 type VerificationToken struct {
-	ID         pgtype.UUID
-	UserID     pgtype.UUID
+	ID         uuid.UUID
+	UserID     uuid.UUID
 	Purpose    VerificationPurpose
 	TokenHash  []byte
 	Email      string
-	ExpiresAt  pgtype.Timestamptz
-	ConsumedAt pgtype.Timestamptz
-	CreatedAt  pgtype.Timestamptz
+	ExpiresAt  time.Time
+	ConsumedAt *time.Time
+	CreatedAt  time.Time
 }
 
 type WebauthnChallenge struct {
-	ID          pgtype.UUID
-	UserID      pgtype.UUID
+	ID          uuid.UUID
+	UserID      *uuid.UUID
 	Ceremony    WebauthnCeremony
 	SessionData []byte
-	ExpiresAt   pgtype.Timestamptz
-	CreatedAt   pgtype.Timestamptz
+	ExpiresAt   time.Time
+	CreatedAt   time.Time
 }

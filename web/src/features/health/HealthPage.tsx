@@ -1,20 +1,15 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
 import { useHealth } from './useHealth'
 
 export function HealthPage() {
   const { data, isPending, isError } = useHealth()
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Budget Tracker</CardTitle>
-          <CardDescription>System status</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {isPending && <p className="text-muted-foreground">Checking…</p>}
+    <main className="flex min-h-dvh items-center justify-center bg-bg p-4">
+      <section className="w-full max-w-sm rounded-lg bg-surface p-5">
+        <h1 className="text-headline">Budget Tracker</h1>
+        <p className="text-subhead text-label-2">System status</p>
+        <dl className="mt-4 space-y-2 text-body">
+          {isPending && <p className="text-label-2">Checking…</p>}
           {isError && <StatusRow label="API" value="unreachable" healthy={false} />}
           {data && (
             <>
@@ -22,8 +17,8 @@ export function HealthPage() {
               <StatusRow label="Database" value={data.database} healthy={data.database === 'up'} />
             </>
           )}
-        </CardContent>
-      </Card>
+        </dl>
+      </section>
     </main>
   )
 }
@@ -31,8 +26,8 @@ export function HealthPage() {
 function StatusRow({ label, value, healthy }: { label: string; value: string; healthy: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span>{label}</span>
-      <Badge variant={healthy ? 'default' : 'destructive'}>{value}</Badge>
+      <dt>{label}</dt>
+      <dd className={healthy ? 'text-positive' : 'text-negative'}>{value}</dd>
     </div>
   )
 }

@@ -5,3 +5,7 @@ generate:
   models: true
   chi-server: true
   strict-server: true
+compatibility:
+  # EntryKindExpense, TransactionStatusPending, …: stable names that don't change
+  # when another enum with the same value is added to the spec.
+  always-prefix-enum-values: true
