@@ -19,11 +19,23 @@ async function authFetch(request: Request): Promise<Response> {
 
   const response = await fetch(request)
   if (response.status !== 401 || !retry) return response
+  // A wrong current password (POST /me/password) is a 401 too, but a fresh token won't
+  // change the answer — and retrying would count as a second password attempt.
+  if (await isWrongPassword(response)) return response
 
   const refreshed = await refreshSession().catch(() => false)
   if (!refreshed) return response
   retry.headers.set('Authorization', `Bearer ${getAccessToken()}`)
   return fetch(retry)
+}
+
+async function isWrongPassword(response: Response): Promise<boolean> {
+  try {
+    const body: unknown = await response.clone().json()
+    return typeof body === 'object' && body !== null && (body as { code?: unknown }).code === 'invalid_credentials'
+  } catch {
+    return false
+  }
 }
 
 // "/api" goes through the Vite dev proxy to the Go API (see vite.config.ts), so the

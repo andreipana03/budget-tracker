@@ -48,7 +48,14 @@ export function MenuPopup({
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner side={side} align={align} sideOffset={sideOffset} className="z-60 outline-none">
-        <BaseMenu.Popup className={cn(POPUP, 'min-w-[220px] max-w-[calc(100vw-32px)] lg:min-w-[180px]', className)}>
+        <BaseMenu.Popup
+          className={cn(
+            POPUP,
+            // Long menus scroll inside the space Base UI measures instead of running off screen.
+            'max-h-(--available-height) min-w-[220px] max-w-[calc(100vw-32px)] overflow-y-auto overscroll-contain lg:min-w-[180px]',
+            className,
+          )}
+        >
           {children}
         </BaseMenu.Popup>
       </BaseMenu.Positioner>
