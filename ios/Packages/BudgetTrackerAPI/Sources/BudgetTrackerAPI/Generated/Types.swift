@@ -22,6 +22,302 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /health`.
     /// - Remark: Generated from `#/paths//health/get(getHealth)`.
     func getHealth(_ input: Operations.GetHealth.Input) async throws -> Operations.GetHealth.Output
+    /// Create an account with email, username and password, and sign in
+    ///
+    /// Creates the user, their household (RON, Europe/Bucharest, month start day 1, 13 default
+    /// categories) and a "Cash" account, sends a verification email, and signs in.
+    /// Errors: 409 `email_taken` / `username_taken`, 422 `validation_failed` (see `fields`).
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/register`.
+    /// - Remark: Generated from `#/paths//auth/register/post(register)`.
+    func register(_ input: Operations.Register.Input) async throws -> Operations.Register.Output
+    /// Sign in with an email or username and a password
+    ///
+    /// `identifier` containing "@" is treated as an email, otherwise as a username.
+    /// Wrong identifier or password: 401 `invalid_credentials` (same answer for both).
+    /// Too many attempts: 429 `rate_limited`.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/login`.
+    /// - Remark: Generated from `#/paths//auth/login/post(login)`.
+    func login(_ input: Operations.Login.Input) async throws -> Operations.Login.Output
+    /// Sign in or sign up with a Google ID token
+    ///
+    /// The web app gets the ID token from Google Identity Services; iOS from GoogleSignIn.
+    /// Linking follows the DB doc § 4: known Google account → that user; verified email of an
+    /// existing user → linked to them; otherwise a new user (username generated from the email).
+    /// 503 `google_not_configured` when the server has no Google client ids.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/google`.
+    /// - Remark: Generated from `#/paths//auth/google/post(signInWithGoogle)`.
+    func signInWithGoogle(_ input: Operations.SignInWithGoogle.Input) async throws -> Operations.SignInWithGoogle.Output
+    /// Exchange a refresh token for a new access token
+    ///
+    /// Web: the refresh token comes from the HttpOnly cookie and a rotated one is set the same way.
+    /// iOS: send `refreshToken` in the body; the rotated one comes back in the body.
+    /// 401 `session_expired` when the token is unknown, expired, revoked or was reused.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/refresh`.
+    /// - Remark: Generated from `#/paths//auth/refresh/post(refreshSession)`.
+    func refreshSession(_ input: Operations.RefreshSession.Input) async throws -> Operations.RefreshSession.Output
+    /// Sign out this device
+    ///
+    /// Revokes the session of the presented refresh token (cookie or body) and clears the cookie. Always succeeds.
+    ///
+    /// - Remark: HTTP `POST /auth/logout`.
+    /// - Remark: Generated from `#/paths//auth/logout/post(signOut)`.
+    func signOut(_ input: Operations.SignOut.Input) async throws -> Operations.SignOut.Output
+    /// Confirm an email address with the token from the verification link
+    ///
+    /// 400 `invalid_token` when the token is unknown, used, expired or for an old address.
+    ///
+    /// - Remark: HTTP `POST /auth/verify-email`.
+    /// - Remark: Generated from `#/paths//auth/verify-email/post(verifyEmail)`.
+    func verifyEmail(_ input: Operations.VerifyEmail.Input) async throws -> Operations.VerifyEmail.Output
+    /// Email a password reset link
+    ///
+    /// Answers 204 whether or not the address belongs to a user.
+    ///
+    /// - Remark: HTTP `POST /auth/forgot-password`.
+    /// - Remark: Generated from `#/paths//auth/forgot-password/post(requestPasswordReset)`.
+    func requestPasswordReset(_ input: Operations.RequestPasswordReset.Input) async throws -> Operations.RequestPasswordReset.Output
+    /// Set a new password with the token from the reset link
+    ///
+    /// Signs out every session of the user. 400 `invalid_token`, 422 `validation_failed`.
+    ///
+    /// - Remark: HTTP `POST /auth/reset-password`.
+    /// - Remark: Generated from `#/paths//auth/reset-password/post(resetPassword)`.
+    func resetPassword(_ input: Operations.ResetPassword.Input) async throws -> Operations.ResetPassword.Output
+    /// Check whether a username can be used
+    ///
+    /// - Remark: HTTP `GET /auth/username-available`.
+    /// - Remark: Generated from `#/paths//auth/username-available/get(checkUsername)`.
+    func checkUsername(_ input: Operations.CheckUsername.Input) async throws -> Operations.CheckUsername.Output
+    /// The signed-in user
+    ///
+    /// - Remark: HTTP `GET /me`.
+    /// - Remark: Generated from `#/paths//me/get(getMe)`.
+    func getMe(_ input: Operations.GetMe.Input) async throws -> Operations.GetMe.Output
+    /// Change name, username or formatting region
+    ///
+    /// 409 `username_taken`, 422 `validation_failed`.
+    ///
+    /// - Remark: HTTP `PATCH /me`.
+    /// - Remark: Generated from `#/paths//me/patch(updateMe)`.
+    func updateMe(_ input: Operations.UpdateMe.Input) async throws -> Operations.UpdateMe.Output
+    /// Delete the account and all of its data
+    ///
+    /// Irreversible. Removes the user, their sessions and, when they're its last member, the household with all its data.
+    ///
+    /// - Remark: HTTP `DELETE /me`.
+    /// - Remark: Generated from `#/paths//me/delete(deleteMe)`.
+    func deleteMe(_ input: Operations.DeleteMe.Input) async throws -> Operations.DeleteMe.Output
+    /// Change the password, or set one for a Google-only account
+    ///
+    /// `currentPassword` is required when the user has a password (401 `invalid_credentials` if wrong).
+    /// Signs out every other session. 422 `validation_failed` for a weak password.
+    ///
+    ///
+    /// - Remark: HTTP `POST /me/password`.
+    /// - Remark: Generated from `#/paths//me/password/post(changePassword)`.
+    func changePassword(_ input: Operations.ChangePassword.Input) async throws -> Operations.ChangePassword.Output
+    /// Send the email verification link again
+    ///
+    /// 409 `already_verified` when the address is already verified. 429 `rate_limited`.
+    ///
+    /// - Remark: HTTP `POST /me/resend-verification`.
+    /// - Remark: Generated from `#/paths//me/resend-verification/post(resendVerification)`.
+    func resendVerification(_ input: Operations.ResendVerification.Input) async throws -> Operations.ResendVerification.Output
+    /// The signed-in user's household settings
+    ///
+    /// - Remark: HTTP `GET /household`.
+    /// - Remark: Generated from `#/paths//household/get(getHousehold)`.
+    func getHousehold(_ input: Operations.GetHousehold.Input) async throws -> Operations.GetHousehold.Output
+    /// Change home currency, time zone or the day budget months start
+    ///
+    /// The home currency can change only while the household has no transactions and no
+    /// subscriptions (409 `home_currency_locked`). 422 `validation_failed` for an unknown time zone.
+    ///
+    ///
+    /// - Remark: HTTP `PATCH /household`.
+    /// - Remark: Generated from `#/paths//household/patch(updateHousehold)`.
+    func updateHousehold(_ input: Operations.UpdateHousehold.Input) async throws -> Operations.UpdateHousehold.Output
+    /// Currencies the app supports
+    ///
+    /// - Remark: HTTP `GET /currencies`.
+    /// - Remark: Generated from `#/paths//currencies/get(listCurrencies)`.
+    func listCurrencies(_ input: Operations.ListCurrencies.Input) async throws -> Operations.ListCurrencies.Output
+    /// The BNR rate between two currencies on a day, optionally applied to an amount
+    ///
+    /// 422 `fx_rate_unavailable` when there is no rate on or before that day.
+    ///
+    /// - Remark: HTTP `GET /fx/quote`.
+    /// - Remark: Generated from `#/paths//fx/quote/get(getFxQuote)`.
+    func getFxQuote(_ input: Operations.GetFxQuote.Input) async throws -> Operations.GetFxQuote.Output
+    /// Accounts with their current balances and the ≈ total in the home currency
+    ///
+    /// - Remark: HTTP `GET /accounts`.
+    /// - Remark: Generated from `#/paths//accounts/get(listAccounts)`.
+    func listAccounts(_ input: Operations.ListAccounts.Input) async throws -> Operations.ListAccounts.Output
+    /// Add an account
+    ///
+    /// 409 `name_taken`. Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /accounts`.
+    /// - Remark: Generated from `#/paths//accounts/post(createAccount)`.
+    func createAccount(_ input: Operations.CreateAccount.Input) async throws -> Operations.CreateAccount.Output
+    /// Replace an account's editable fields
+    ///
+    /// 409 `version_conflict`, 409 `name_taken`, 409 `account_currency_locked` (currency can't
+    /// change once the account has transactions or subscriptions).
+    ///
+    ///
+    /// - Remark: HTTP `PUT /accounts/{id}`.
+    /// - Remark: Generated from `#/paths//accounts/{id}/put(updateAccount)`.
+    func updateAccount(_ input: Operations.UpdateAccount.Input) async throws -> Operations.UpdateAccount.Output
+    /// Delete an account, or archive it when it has history
+    ///
+    /// - Remark: HTTP `DELETE /accounts/{id}`.
+    /// - Remark: Generated from `#/paths//accounts/{id}/delete(deleteAccount)`.
+    func deleteAccount(_ input: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output
+    /// Expense and income categories, in sort order
+    ///
+    /// - Remark: HTTP `GET /categories`.
+    /// - Remark: Generated from `#/paths//categories/get(listCategories)`.
+    func listCategories(_ input: Operations.ListCategories.Input) async throws -> Operations.ListCategories.Output
+    /// Add a category
+    ///
+    /// 409 `name_taken`. Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /categories`.
+    /// - Remark: Generated from `#/paths//categories/post(createCategory)`.
+    func createCategory(_ input: Operations.CreateCategory.Input) async throws -> Operations.CreateCategory.Output
+    /// Replace a category's editable fields
+    ///
+    /// 409 `version_conflict`, 409 `name_taken`. `kind` never changes.
+    ///
+    /// - Remark: HTTP `PUT /categories/{id}`.
+    /// - Remark: Generated from `#/paths//categories/{id}/put(updateCategory)`.
+    func updateCategory(_ input: Operations.UpdateCategory.Input) async throws -> Operations.UpdateCategory.Output
+    /// Delete a category, or archive it when it has history
+    ///
+    /// - Remark: HTTP `DELETE /categories/{id}`.
+    /// - Remark: Generated from `#/paths//categories/{id}/delete(deleteCategory)`.
+    func deleteCategory(_ input: Operations.DeleteCategory.Input) async throws -> Operations.DeleteCategory.Output
+    /// Transactions, newest first, a page at a time
+    ///
+    /// Ordered by occurredOn desc, occurredAt desc, id desc. Soft-deleted rows are never returned.
+    /// `dayTotals` covers every day that appears in `items` (computed over all matching
+    /// transactions of that day, not only this page).
+    ///
+    ///
+    /// - Remark: HTTP `GET /transactions`.
+    /// - Remark: Generated from `#/paths//transactions/get(listTransactions)`.
+    func listTransactions(_ input: Operations.ListTransactions.Input) async throws -> Operations.ListTransactions.Output
+    /// Add an expense or income
+    ///
+    /// Converts and freezes the account-currency and home-currency amounts with that day's BNR
+    /// rate (422 `fx_rate_unavailable` if missing). With `repeat`, also creates a subscription
+    /// starting on `occurredOn` and links this transaction as its first occurrence.
+    /// Idempotent when the same `id` is sent again.
+    ///
+    ///
+    /// - Remark: HTTP `POST /transactions`.
+    /// - Remark: Generated from `#/paths//transactions/post(createTransaction)`.
+    func createTransaction(_ input: Operations.CreateTransaction.Input) async throws -> Operations.CreateTransaction.Output
+    /// One transaction
+    ///
+    /// - Remark: HTTP `GET /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/get(getTransaction)`.
+    func getTransaction(_ input: Operations.GetTransaction.Input) async throws -> Operations.GetTransaction.Output
+    /// Replace a transaction's editable fields
+    ///
+    /// Recomputes the frozen amounts when amount, currency, account or date change. 409 `version_conflict`.
+    ///
+    /// - Remark: HTTP `PUT /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/put(updateTransaction)`.
+    func updateTransaction(_ input: Operations.UpdateTransaction.Input) async throws -> Operations.UpdateTransaction.Output
+    /// Delete a transaction (soft; restore it with Undo)
+    ///
+    /// - Remark: HTTP `DELETE /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/delete(deleteTransaction)`.
+    func deleteTransaction(_ input: Operations.DeleteTransaction.Input) async throws -> Operations.DeleteTransaction.Output
+    /// Undo a delete
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/restore`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/restore/post(restoreTransaction)`.
+    func restoreTransaction(_ input: Operations.RestoreTransaction.Input) async throws -> Operations.RestoreTransaction.Output
+    /// Confirm a pending subscription charge (optionally with the real amount)
+    ///
+    /// 409 `not_pending` when the transaction isn't pending.
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/confirm`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/confirm/post(confirmTransaction)`.
+    func confirmTransaction(_ input: Operations.ConfirmTransaction.Input) async throws -> Operations.ConfirmTransaction.Output
+    /// Mark a pending subscription charge as not happened this time
+    ///
+    /// 409 `not_pending` when the transaction isn't pending.
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/skip`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/skip/post(skipTransaction)`.
+    func skipTransaction(_ input: Operations.SkipTransaction.Input) async throws -> Operations.SkipTransaction.Output
+    /// Limits, spending and pace for every expense category in a budget month
+    ///
+    /// - Remark: HTTP `GET /budgets`.
+    /// - Remark: Generated from `#/paths//budgets/get(getBudgets)`.
+    func getBudgets(_ input: Operations.GetBudgets.Input) async throws -> Operations.GetBudgets.Output
+    /// Set monthly limits for several categories at once
+    ///
+    /// `ongoing`: the limit applies from `month` on, until a later ongoing limit replaces it
+    /// (`amountMinor: null` removes the limit from that month on). `single_month`: only that
+    /// month (`amountMinor: null` removes the override). 422 for income categories.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /budgets`.
+    /// - Remark: Generated from `#/paths//budgets/put(setBudgets)`.
+    func setBudgets(_ input: Operations.SetBudgets.Input) async throws -> Operations.SetBudgets.Output
+    /// Everything the Home screen shows for a budget month
+    ///
+    /// - Remark: HTTP `GET /home`.
+    /// - Remark: Generated from `#/paths//home/get(getHome)`.
+    func getHome(_ input: Operations.GetHome.Input) async throws -> Operations.GetHome.Output
+    /// Budget months that have data, newest first (for the month picker)
+    ///
+    /// - Remark: HTTP `GET /months`.
+    /// - Remark: Generated from `#/paths//months/get(listMonths)`.
+    func listMonths(_ input: Operations.ListMonths.Input) async throws -> Operations.ListMonths.Output
+    /// Spending trends for a period
+    ///
+    /// - Remark: HTTP `GET /insights`.
+    /// - Remark: Generated from `#/paths//insights/get(getInsights)`.
+    func getInsights(_ input: Operations.GetInsights.Input) async throws -> Operations.GetInsights.Output
+    /// Repeating payments and income, with totals and what's due soon
+    ///
+    /// - Remark: HTTP `GET /subscriptions`.
+    /// - Remark: Generated from `#/paths//subscriptions/get(listSubscriptions)`.
+    func listSubscriptions(_ input: Operations.ListSubscriptions.Input) async throws -> Operations.ListSubscriptions.Output
+    /// Add a subscription
+    ///
+    /// Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /subscriptions`.
+    /// - Remark: Generated from `#/paths//subscriptions/post(createSubscription)`.
+    func createSubscription(_ input: Operations.CreateSubscription.Input) async throws -> Operations.CreateSubscription.Output
+    /// Replace a subscription's editable fields (isActive false pauses it)
+    ///
+    /// 409 `version_conflict`. Past transactions are never changed.
+    ///
+    /// - Remark: HTTP `PUT /subscriptions/{id}`.
+    /// - Remark: Generated from `#/paths//subscriptions/{id}/put(updateSubscription)`.
+    func updateSubscription(_ input: Operations.UpdateSubscription.Input) async throws -> Operations.UpdateSubscription.Output
+    /// Delete a subscription (its past transactions stay)
+    ///
+    /// - Remark: HTTP `DELETE /subscriptions/{id}`.
+    /// - Remark: Generated from `#/paths//subscriptions/{id}/delete(deleteSubscription)`.
+    func deleteSubscription(_ input: Operations.DeleteSubscription.Input) async throws -> Operations.DeleteSubscription.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -32,6 +328,614 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//health/get(getHealth)`.
     public func getHealth(headers: Operations.GetHealth.Input.Headers = .init()) async throws -> Operations.GetHealth.Output {
         try await getHealth(Operations.GetHealth.Input(headers: headers))
+    }
+    /// Create an account with email, username and password, and sign in
+    ///
+    /// Creates the user, their household (RON, Europe/Bucharest, month start day 1, 13 default
+    /// categories) and a "Cash" account, sends a verification email, and signs in.
+    /// Errors: 409 `email_taken` / `username_taken`, 422 `validation_failed` (see `fields`).
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/register`.
+    /// - Remark: Generated from `#/paths//auth/register/post(register)`.
+    public func register(
+        headers: Operations.Register.Input.Headers = .init(),
+        body: Operations.Register.Input.Body
+    ) async throws -> Operations.Register.Output {
+        try await register(Operations.Register.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Sign in with an email or username and a password
+    ///
+    /// `identifier` containing "@" is treated as an email, otherwise as a username.
+    /// Wrong identifier or password: 401 `invalid_credentials` (same answer for both).
+    /// Too many attempts: 429 `rate_limited`.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/login`.
+    /// - Remark: Generated from `#/paths//auth/login/post(login)`.
+    public func login(
+        headers: Operations.Login.Input.Headers = .init(),
+        body: Operations.Login.Input.Body
+    ) async throws -> Operations.Login.Output {
+        try await login(Operations.Login.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Sign in or sign up with a Google ID token
+    ///
+    /// The web app gets the ID token from Google Identity Services; iOS from GoogleSignIn.
+    /// Linking follows the DB doc § 4: known Google account → that user; verified email of an
+    /// existing user → linked to them; otherwise a new user (username generated from the email).
+    /// 503 `google_not_configured` when the server has no Google client ids.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/google`.
+    /// - Remark: Generated from `#/paths//auth/google/post(signInWithGoogle)`.
+    public func signInWithGoogle(
+        headers: Operations.SignInWithGoogle.Input.Headers = .init(),
+        body: Operations.SignInWithGoogle.Input.Body
+    ) async throws -> Operations.SignInWithGoogle.Output {
+        try await signInWithGoogle(Operations.SignInWithGoogle.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Exchange a refresh token for a new access token
+    ///
+    /// Web: the refresh token comes from the HttpOnly cookie and a rotated one is set the same way.
+    /// iOS: send `refreshToken` in the body; the rotated one comes back in the body.
+    /// 401 `session_expired` when the token is unknown, expired, revoked or was reused.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/refresh`.
+    /// - Remark: Generated from `#/paths//auth/refresh/post(refreshSession)`.
+    public func refreshSession(
+        headers: Operations.RefreshSession.Input.Headers = .init(),
+        body: Operations.RefreshSession.Input.Body
+    ) async throws -> Operations.RefreshSession.Output {
+        try await refreshSession(Operations.RefreshSession.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Sign out this device
+    ///
+    /// Revokes the session of the presented refresh token (cookie or body) and clears the cookie. Always succeeds.
+    ///
+    /// - Remark: HTTP `POST /auth/logout`.
+    /// - Remark: Generated from `#/paths//auth/logout/post(signOut)`.
+    public func signOut(
+        headers: Operations.SignOut.Input.Headers = .init(),
+        body: Operations.SignOut.Input.Body? = nil
+    ) async throws -> Operations.SignOut.Output {
+        try await signOut(Operations.SignOut.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Confirm an email address with the token from the verification link
+    ///
+    /// 400 `invalid_token` when the token is unknown, used, expired or for an old address.
+    ///
+    /// - Remark: HTTP `POST /auth/verify-email`.
+    /// - Remark: Generated from `#/paths//auth/verify-email/post(verifyEmail)`.
+    public func verifyEmail(
+        headers: Operations.VerifyEmail.Input.Headers = .init(),
+        body: Operations.VerifyEmail.Input.Body
+    ) async throws -> Operations.VerifyEmail.Output {
+        try await verifyEmail(Operations.VerifyEmail.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Email a password reset link
+    ///
+    /// Answers 204 whether or not the address belongs to a user.
+    ///
+    /// - Remark: HTTP `POST /auth/forgot-password`.
+    /// - Remark: Generated from `#/paths//auth/forgot-password/post(requestPasswordReset)`.
+    public func requestPasswordReset(
+        headers: Operations.RequestPasswordReset.Input.Headers = .init(),
+        body: Operations.RequestPasswordReset.Input.Body
+    ) async throws -> Operations.RequestPasswordReset.Output {
+        try await requestPasswordReset(Operations.RequestPasswordReset.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Set a new password with the token from the reset link
+    ///
+    /// Signs out every session of the user. 400 `invalid_token`, 422 `validation_failed`.
+    ///
+    /// - Remark: HTTP `POST /auth/reset-password`.
+    /// - Remark: Generated from `#/paths//auth/reset-password/post(resetPassword)`.
+    public func resetPassword(
+        headers: Operations.ResetPassword.Input.Headers = .init(),
+        body: Operations.ResetPassword.Input.Body
+    ) async throws -> Operations.ResetPassword.Output {
+        try await resetPassword(Operations.ResetPassword.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Check whether a username can be used
+    ///
+    /// - Remark: HTTP `GET /auth/username-available`.
+    /// - Remark: Generated from `#/paths//auth/username-available/get(checkUsername)`.
+    public func checkUsername(
+        query: Operations.CheckUsername.Input.Query,
+        headers: Operations.CheckUsername.Input.Headers = .init()
+    ) async throws -> Operations.CheckUsername.Output {
+        try await checkUsername(Operations.CheckUsername.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// The signed-in user
+    ///
+    /// - Remark: HTTP `GET /me`.
+    /// - Remark: Generated from `#/paths//me/get(getMe)`.
+    public func getMe(headers: Operations.GetMe.Input.Headers = .init()) async throws -> Operations.GetMe.Output {
+        try await getMe(Operations.GetMe.Input(headers: headers))
+    }
+    /// Change name, username or formatting region
+    ///
+    /// 409 `username_taken`, 422 `validation_failed`.
+    ///
+    /// - Remark: HTTP `PATCH /me`.
+    /// - Remark: Generated from `#/paths//me/patch(updateMe)`.
+    public func updateMe(
+        headers: Operations.UpdateMe.Input.Headers = .init(),
+        body: Operations.UpdateMe.Input.Body
+    ) async throws -> Operations.UpdateMe.Output {
+        try await updateMe(Operations.UpdateMe.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete the account and all of its data
+    ///
+    /// Irreversible. Removes the user, their sessions and, when they're its last member, the household with all its data.
+    ///
+    /// - Remark: HTTP `DELETE /me`.
+    /// - Remark: Generated from `#/paths//me/delete(deleteMe)`.
+    public func deleteMe(headers: Operations.DeleteMe.Input.Headers = .init()) async throws -> Operations.DeleteMe.Output {
+        try await deleteMe(Operations.DeleteMe.Input(headers: headers))
+    }
+    /// Change the password, or set one for a Google-only account
+    ///
+    /// `currentPassword` is required when the user has a password (401 `invalid_credentials` if wrong).
+    /// Signs out every other session. 422 `validation_failed` for a weak password.
+    ///
+    ///
+    /// - Remark: HTTP `POST /me/password`.
+    /// - Remark: Generated from `#/paths//me/password/post(changePassword)`.
+    public func changePassword(
+        headers: Operations.ChangePassword.Input.Headers = .init(),
+        body: Operations.ChangePassword.Input.Body
+    ) async throws -> Operations.ChangePassword.Output {
+        try await changePassword(Operations.ChangePassword.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Send the email verification link again
+    ///
+    /// 409 `already_verified` when the address is already verified. 429 `rate_limited`.
+    ///
+    /// - Remark: HTTP `POST /me/resend-verification`.
+    /// - Remark: Generated from `#/paths//me/resend-verification/post(resendVerification)`.
+    public func resendVerification(headers: Operations.ResendVerification.Input.Headers = .init()) async throws -> Operations.ResendVerification.Output {
+        try await resendVerification(Operations.ResendVerification.Input(headers: headers))
+    }
+    /// The signed-in user's household settings
+    ///
+    /// - Remark: HTTP `GET /household`.
+    /// - Remark: Generated from `#/paths//household/get(getHousehold)`.
+    public func getHousehold(headers: Operations.GetHousehold.Input.Headers = .init()) async throws -> Operations.GetHousehold.Output {
+        try await getHousehold(Operations.GetHousehold.Input(headers: headers))
+    }
+    /// Change home currency, time zone or the day budget months start
+    ///
+    /// The home currency can change only while the household has no transactions and no
+    /// subscriptions (409 `home_currency_locked`). 422 `validation_failed` for an unknown time zone.
+    ///
+    ///
+    /// - Remark: HTTP `PATCH /household`.
+    /// - Remark: Generated from `#/paths//household/patch(updateHousehold)`.
+    public func updateHousehold(
+        headers: Operations.UpdateHousehold.Input.Headers = .init(),
+        body: Operations.UpdateHousehold.Input.Body
+    ) async throws -> Operations.UpdateHousehold.Output {
+        try await updateHousehold(Operations.UpdateHousehold.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Currencies the app supports
+    ///
+    /// - Remark: HTTP `GET /currencies`.
+    /// - Remark: Generated from `#/paths//currencies/get(listCurrencies)`.
+    public func listCurrencies(headers: Operations.ListCurrencies.Input.Headers = .init()) async throws -> Operations.ListCurrencies.Output {
+        try await listCurrencies(Operations.ListCurrencies.Input(headers: headers))
+    }
+    /// The BNR rate between two currencies on a day, optionally applied to an amount
+    ///
+    /// 422 `fx_rate_unavailable` when there is no rate on or before that day.
+    ///
+    /// - Remark: HTTP `GET /fx/quote`.
+    /// - Remark: Generated from `#/paths//fx/quote/get(getFxQuote)`.
+    public func getFxQuote(
+        query: Operations.GetFxQuote.Input.Query,
+        headers: Operations.GetFxQuote.Input.Headers = .init()
+    ) async throws -> Operations.GetFxQuote.Output {
+        try await getFxQuote(Operations.GetFxQuote.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Accounts with their current balances and the ≈ total in the home currency
+    ///
+    /// - Remark: HTTP `GET /accounts`.
+    /// - Remark: Generated from `#/paths//accounts/get(listAccounts)`.
+    public func listAccounts(
+        query: Operations.ListAccounts.Input.Query = .init(),
+        headers: Operations.ListAccounts.Input.Headers = .init()
+    ) async throws -> Operations.ListAccounts.Output {
+        try await listAccounts(Operations.ListAccounts.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Add an account
+    ///
+    /// 409 `name_taken`. Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /accounts`.
+    /// - Remark: Generated from `#/paths//accounts/post(createAccount)`.
+    public func createAccount(
+        headers: Operations.CreateAccount.Input.Headers = .init(),
+        body: Operations.CreateAccount.Input.Body
+    ) async throws -> Operations.CreateAccount.Output {
+        try await createAccount(Operations.CreateAccount.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Replace an account's editable fields
+    ///
+    /// 409 `version_conflict`, 409 `name_taken`, 409 `account_currency_locked` (currency can't
+    /// change once the account has transactions or subscriptions).
+    ///
+    ///
+    /// - Remark: HTTP `PUT /accounts/{id}`.
+    /// - Remark: Generated from `#/paths//accounts/{id}/put(updateAccount)`.
+    public func updateAccount(
+        path: Operations.UpdateAccount.Input.Path,
+        headers: Operations.UpdateAccount.Input.Headers = .init(),
+        body: Operations.UpdateAccount.Input.Body
+    ) async throws -> Operations.UpdateAccount.Output {
+        try await updateAccount(Operations.UpdateAccount.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete an account, or archive it when it has history
+    ///
+    /// - Remark: HTTP `DELETE /accounts/{id}`.
+    /// - Remark: Generated from `#/paths//accounts/{id}/delete(deleteAccount)`.
+    public func deleteAccount(
+        path: Operations.DeleteAccount.Input.Path,
+        headers: Operations.DeleteAccount.Input.Headers = .init()
+    ) async throws -> Operations.DeleteAccount.Output {
+        try await deleteAccount(Operations.DeleteAccount.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Expense and income categories, in sort order
+    ///
+    /// - Remark: HTTP `GET /categories`.
+    /// - Remark: Generated from `#/paths//categories/get(listCategories)`.
+    public func listCategories(
+        query: Operations.ListCategories.Input.Query = .init(),
+        headers: Operations.ListCategories.Input.Headers = .init()
+    ) async throws -> Operations.ListCategories.Output {
+        try await listCategories(Operations.ListCategories.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Add a category
+    ///
+    /// 409 `name_taken`. Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /categories`.
+    /// - Remark: Generated from `#/paths//categories/post(createCategory)`.
+    public func createCategory(
+        headers: Operations.CreateCategory.Input.Headers = .init(),
+        body: Operations.CreateCategory.Input.Body
+    ) async throws -> Operations.CreateCategory.Output {
+        try await createCategory(Operations.CreateCategory.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Replace a category's editable fields
+    ///
+    /// 409 `version_conflict`, 409 `name_taken`. `kind` never changes.
+    ///
+    /// - Remark: HTTP `PUT /categories/{id}`.
+    /// - Remark: Generated from `#/paths//categories/{id}/put(updateCategory)`.
+    public func updateCategory(
+        path: Operations.UpdateCategory.Input.Path,
+        headers: Operations.UpdateCategory.Input.Headers = .init(),
+        body: Operations.UpdateCategory.Input.Body
+    ) async throws -> Operations.UpdateCategory.Output {
+        try await updateCategory(Operations.UpdateCategory.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a category, or archive it when it has history
+    ///
+    /// - Remark: HTTP `DELETE /categories/{id}`.
+    /// - Remark: Generated from `#/paths//categories/{id}/delete(deleteCategory)`.
+    public func deleteCategory(
+        path: Operations.DeleteCategory.Input.Path,
+        headers: Operations.DeleteCategory.Input.Headers = .init()
+    ) async throws -> Operations.DeleteCategory.Output {
+        try await deleteCategory(Operations.DeleteCategory.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Transactions, newest first, a page at a time
+    ///
+    /// Ordered by occurredOn desc, occurredAt desc, id desc. Soft-deleted rows are never returned.
+    /// `dayTotals` covers every day that appears in `items` (computed over all matching
+    /// transactions of that day, not only this page).
+    ///
+    ///
+    /// - Remark: HTTP `GET /transactions`.
+    /// - Remark: Generated from `#/paths//transactions/get(listTransactions)`.
+    public func listTransactions(
+        query: Operations.ListTransactions.Input.Query = .init(),
+        headers: Operations.ListTransactions.Input.Headers = .init()
+    ) async throws -> Operations.ListTransactions.Output {
+        try await listTransactions(Operations.ListTransactions.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Add an expense or income
+    ///
+    /// Converts and freezes the account-currency and home-currency amounts with that day's BNR
+    /// rate (422 `fx_rate_unavailable` if missing). With `repeat`, also creates a subscription
+    /// starting on `occurredOn` and links this transaction as its first occurrence.
+    /// Idempotent when the same `id` is sent again.
+    ///
+    ///
+    /// - Remark: HTTP `POST /transactions`.
+    /// - Remark: Generated from `#/paths//transactions/post(createTransaction)`.
+    public func createTransaction(
+        headers: Operations.CreateTransaction.Input.Headers = .init(),
+        body: Operations.CreateTransaction.Input.Body
+    ) async throws -> Operations.CreateTransaction.Output {
+        try await createTransaction(Operations.CreateTransaction.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// One transaction
+    ///
+    /// - Remark: HTTP `GET /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/get(getTransaction)`.
+    public func getTransaction(
+        path: Operations.GetTransaction.Input.Path,
+        headers: Operations.GetTransaction.Input.Headers = .init()
+    ) async throws -> Operations.GetTransaction.Output {
+        try await getTransaction(Operations.GetTransaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Replace a transaction's editable fields
+    ///
+    /// Recomputes the frozen amounts when amount, currency, account or date change. 409 `version_conflict`.
+    ///
+    /// - Remark: HTTP `PUT /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/put(updateTransaction)`.
+    public func updateTransaction(
+        path: Operations.UpdateTransaction.Input.Path,
+        headers: Operations.UpdateTransaction.Input.Headers = .init(),
+        body: Operations.UpdateTransaction.Input.Body
+    ) async throws -> Operations.UpdateTransaction.Output {
+        try await updateTransaction(Operations.UpdateTransaction.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a transaction (soft; restore it with Undo)
+    ///
+    /// - Remark: HTTP `DELETE /transactions/{id}`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/delete(deleteTransaction)`.
+    public func deleteTransaction(
+        path: Operations.DeleteTransaction.Input.Path,
+        headers: Operations.DeleteTransaction.Input.Headers = .init()
+    ) async throws -> Operations.DeleteTransaction.Output {
+        try await deleteTransaction(Operations.DeleteTransaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Undo a delete
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/restore`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/restore/post(restoreTransaction)`.
+    public func restoreTransaction(
+        path: Operations.RestoreTransaction.Input.Path,
+        headers: Operations.RestoreTransaction.Input.Headers = .init()
+    ) async throws -> Operations.RestoreTransaction.Output {
+        try await restoreTransaction(Operations.RestoreTransaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Confirm a pending subscription charge (optionally with the real amount)
+    ///
+    /// 409 `not_pending` when the transaction isn't pending.
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/confirm`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/confirm/post(confirmTransaction)`.
+    public func confirmTransaction(
+        path: Operations.ConfirmTransaction.Input.Path,
+        headers: Operations.ConfirmTransaction.Input.Headers = .init(),
+        body: Operations.ConfirmTransaction.Input.Body? = nil
+    ) async throws -> Operations.ConfirmTransaction.Output {
+        try await confirmTransaction(Operations.ConfirmTransaction.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Mark a pending subscription charge as not happened this time
+    ///
+    /// 409 `not_pending` when the transaction isn't pending.
+    ///
+    /// - Remark: HTTP `POST /transactions/{id}/skip`.
+    /// - Remark: Generated from `#/paths//transactions/{id}/skip/post(skipTransaction)`.
+    public func skipTransaction(
+        path: Operations.SkipTransaction.Input.Path,
+        headers: Operations.SkipTransaction.Input.Headers = .init()
+    ) async throws -> Operations.SkipTransaction.Output {
+        try await skipTransaction(Operations.SkipTransaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Limits, spending and pace for every expense category in a budget month
+    ///
+    /// - Remark: HTTP `GET /budgets`.
+    /// - Remark: Generated from `#/paths//budgets/get(getBudgets)`.
+    public func getBudgets(
+        query: Operations.GetBudgets.Input.Query = .init(),
+        headers: Operations.GetBudgets.Input.Headers = .init()
+    ) async throws -> Operations.GetBudgets.Output {
+        try await getBudgets(Operations.GetBudgets.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Set monthly limits for several categories at once
+    ///
+    /// `ongoing`: the limit applies from `month` on, until a later ongoing limit replaces it
+    /// (`amountMinor: null` removes the limit from that month on). `single_month`: only that
+    /// month (`amountMinor: null` removes the override). 422 for income categories.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /budgets`.
+    /// - Remark: Generated from `#/paths//budgets/put(setBudgets)`.
+    public func setBudgets(
+        headers: Operations.SetBudgets.Input.Headers = .init(),
+        body: Operations.SetBudgets.Input.Body
+    ) async throws -> Operations.SetBudgets.Output {
+        try await setBudgets(Operations.SetBudgets.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Everything the Home screen shows for a budget month
+    ///
+    /// - Remark: HTTP `GET /home`.
+    /// - Remark: Generated from `#/paths//home/get(getHome)`.
+    public func getHome(
+        query: Operations.GetHome.Input.Query = .init(),
+        headers: Operations.GetHome.Input.Headers = .init()
+    ) async throws -> Operations.GetHome.Output {
+        try await getHome(Operations.GetHome.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Budget months that have data, newest first (for the month picker)
+    ///
+    /// - Remark: HTTP `GET /months`.
+    /// - Remark: Generated from `#/paths//months/get(listMonths)`.
+    public func listMonths(headers: Operations.ListMonths.Input.Headers = .init()) async throws -> Operations.ListMonths.Output {
+        try await listMonths(Operations.ListMonths.Input(headers: headers))
+    }
+    /// Spending trends for a period
+    ///
+    /// - Remark: HTTP `GET /insights`.
+    /// - Remark: Generated from `#/paths//insights/get(getInsights)`.
+    public func getInsights(
+        query: Operations.GetInsights.Input.Query = .init(),
+        headers: Operations.GetInsights.Input.Headers = .init()
+    ) async throws -> Operations.GetInsights.Output {
+        try await getInsights(Operations.GetInsights.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Repeating payments and income, with totals and what's due soon
+    ///
+    /// - Remark: HTTP `GET /subscriptions`.
+    /// - Remark: Generated from `#/paths//subscriptions/get(listSubscriptions)`.
+    public func listSubscriptions(headers: Operations.ListSubscriptions.Input.Headers = .init()) async throws -> Operations.ListSubscriptions.Output {
+        try await listSubscriptions(Operations.ListSubscriptions.Input(headers: headers))
+    }
+    /// Add a subscription
+    ///
+    /// Idempotent when the same `id` is sent again.
+    ///
+    /// - Remark: HTTP `POST /subscriptions`.
+    /// - Remark: Generated from `#/paths//subscriptions/post(createSubscription)`.
+    public func createSubscription(
+        headers: Operations.CreateSubscription.Input.Headers = .init(),
+        body: Operations.CreateSubscription.Input.Body
+    ) async throws -> Operations.CreateSubscription.Output {
+        try await createSubscription(Operations.CreateSubscription.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Replace a subscription's editable fields (isActive false pauses it)
+    ///
+    /// 409 `version_conflict`. Past transactions are never changed.
+    ///
+    /// - Remark: HTTP `PUT /subscriptions/{id}`.
+    /// - Remark: Generated from `#/paths//subscriptions/{id}/put(updateSubscription)`.
+    public func updateSubscription(
+        path: Operations.UpdateSubscription.Input.Path,
+        headers: Operations.UpdateSubscription.Input.Headers = .init(),
+        body: Operations.UpdateSubscription.Input.Body
+    ) async throws -> Operations.UpdateSubscription.Output {
+        try await updateSubscription(Operations.UpdateSubscription.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a subscription (its past transactions stay)
+    ///
+    /// - Remark: HTTP `DELETE /subscriptions/{id}`.
+    /// - Remark: Generated from `#/paths//subscriptions/{id}/delete(deleteSubscription)`.
+    public func deleteSubscription(
+        path: Operations.DeleteSubscription.Input.Path,
+        headers: Operations.DeleteSubscription.Input.Headers = .init()
+    ) async throws -> Operations.DeleteSubscription.Output {
+        try await deleteSubscription(Operations.DeleteSubscription.Input(
+            path: path,
+            headers: headers
+        ))
     }
 }
 

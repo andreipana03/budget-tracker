@@ -51,5 +51,2913 @@ extension Components {
                 case database
             }
         }
+        /// - Remark: Generated from `#/components/schemas/Error`.
+        public struct _Error: Codable, Hashable, Sendable {
+            /// Stable machine-readable reason. Clients branch on these, never on `message`.
+            /// Requests: bad_request, invalid_parameter, validation_failed (see `fields`), rate_limited.
+            /// Auth: unauthorized, token_expired (refresh and retry), session_expired (sign in again),
+            /// invalid_credentials, invalid_token (email link), invalid_google_token,
+            /// google_email_unverified, google_not_configured, identity_conflict, already_verified.
+            /// Data: not_found, version_conflict, id_taken, email_taken, username_taken, name_taken,
+            /// budget_exists, duplicate_occurrence, invalid_reference, not_pending,
+            /// account_currency_locked, home_currency_locked, fx_rate_unavailable.
+            /// Server: internal, not_implemented.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/Error/code`.
+            public var code: Swift.String
+            /// A sentence a person can read, in the app's voice.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Error/message`.
+            public var message: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Error/fields`.
+            public var fields: [Components.Schemas.FieldError]?
+            /// Creates a new `_Error`.
+            ///
+            /// - Parameters:
+            ///   - code: Stable machine-readable reason. Clients branch on these, never on `message`.
+            ///   - message: A sentence a person can read, in the app's voice.
+            ///   - fields:
+            public init(
+                code: Swift.String,
+                message: Swift.String,
+                fields: [Components.Schemas.FieldError]? = nil
+            ) {
+                self.code = code
+                self.message = message
+                self.fields = fields
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case message
+                case fields
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FieldError`.
+        public struct FieldError: Codable, Hashable, Sendable {
+            /// The request field (camelCase), e.g. "password".
+            ///
+            /// - Remark: Generated from `#/components/schemas/FieldError/field`.
+            public var field: Swift.String
+            /// required, invalid, invalid_format, too_short, too_long, too_small, too_large, out_of_range, taken,
+            /// reserved, missing_uppercase, missing_lowercase, missing_digit, missing_symbol,
+            /// same_as_username, not_found, archived, kind_mismatch, expense_only, not_expense,
+            /// unsupported, before_start.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/FieldError/code`.
+            public var code: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FieldError/message`.
+            public var message: Swift.String
+            /// Creates a new `FieldError`.
+            ///
+            /// - Parameters:
+            ///   - field: The request field (camelCase), e.g. "password".
+            ///   - code: required, invalid, invalid_format, too_short, too_long, too_small, too_large, out_of_range, taken,
+            ///   - message:
+            public init(
+                field: Swift.String,
+                code: Swift.String,
+                message: Swift.String
+            ) {
+                self.field = field
+                self.code = code
+                self.message = message
+            }
+            public enum CodingKeys: String, CodingKey {
+                case field
+                case code
+                case message
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DeleteResult`.
+        public struct DeleteResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DeleteResult/outcome`.
+            @frozen public enum OutcomePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case deleted = "deleted"
+                case archived = "archived"
+            }
+            /// - Remark: Generated from `#/components/schemas/DeleteResult/outcome`.
+            public var outcome: Components.Schemas.DeleteResult.OutcomePayload
+            /// Creates a new `DeleteResult`.
+            ///
+            /// - Parameters:
+            ///   - outcome:
+            public init(outcome: Components.Schemas.DeleteResult.OutcomePayload) {
+                self.outcome = outcome
+            }
+            public enum CodingKeys: String, CodingKey {
+                case outcome
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CurrencyCode`.
+        public typealias CurrencyCode = Swift.String
+        /// A budget month, YYYY-MM.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Month`.
+        public typealias Month = Swift.String
+        /// - Remark: Generated from `#/components/schemas/EntryKind`.
+        @frozen public enum EntryKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case expense = "expense"
+            case income = "income"
+        }
+        /// - Remark: Generated from `#/components/schemas/TransactionStatus`.
+        @frozen public enum TransactionStatus: String, Codable, Hashable, Sendable, CaseIterable {
+            case posted = "posted"
+            case pending = "pending"
+            case skipped = "skipped"
+        }
+        /// - Remark: Generated from `#/components/schemas/AccountType`.
+        @frozen public enum AccountType: String, Codable, Hashable, Sendable, CaseIterable {
+            case cash = "cash"
+            case bank = "bank"
+            case creditCard = "credit_card"
+            case savings = "savings"
+            case other = "other"
+        }
+        /// A hue from the design's category palette; clients map it to their color tokens.
+        ///
+        /// - Remark: Generated from `#/components/schemas/CategoryColor`.
+        @frozen public enum CategoryColor: String, Codable, Hashable, Sendable, CaseIterable {
+            case mint = "mint"
+            case orange = "orange"
+            case indigo = "indigo"
+            case cyan = "cyan"
+            case purple = "purple"
+            case pink = "pink"
+            case brown = "brown"
+            case gray = "gray"
+            case teal = "teal"
+            case yellow = "yellow"
+            case green = "green"
+        }
+        /// - Remark: Generated from `#/components/schemas/Frequency`.
+        @frozen public enum Frequency: String, Codable, Hashable, Sendable, CaseIterable {
+            case weekly = "weekly"
+            case monthly = "monthly"
+            case yearly = "yearly"
+        }
+        /// - Remark: Generated from `#/components/schemas/Platform`.
+        @frozen public enum Platform: String, Codable, Hashable, Sendable, CaseIterable {
+            case web = "web"
+            case ios = "ios"
+        }
+        /// - Remark: Generated from `#/components/schemas/AuthProvider`.
+        @frozen public enum AuthProvider: String, Codable, Hashable, Sendable, CaseIterable {
+            case google = "google"
+            case apple = "apple"
+        }
+        /// - Remark: Generated from `#/components/schemas/RegisterRequest`.
+        public struct RegisterRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RegisterRequest/email`.
+            public var email: Swift.String
+            /// 3–30 characters of a–z, 0–9, ".", "_" and "-". Compared case-insensitively.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RegisterRequest/username`.
+            public var username: Swift.String
+            /// 8–128 characters with an uppercase letter, a lowercase letter, a digit and a symbol.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RegisterRequest/password`.
+            public var password: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RegisterRequest/platform`.
+            public var platform: Components.Schemas.Platform
+            /// - Remark: Generated from `#/components/schemas/RegisterRequest/deviceName`.
+            public var deviceName: Swift.String?
+            /// Creates a new `RegisterRequest`.
+            ///
+            /// - Parameters:
+            ///   - email:
+            ///   - username: 3–30 characters of a–z, 0–9, ".", "_" and "-". Compared case-insensitively.
+            ///   - password: 8–128 characters with an uppercase letter, a lowercase letter, a digit and a symbol.
+            ///   - platform:
+            ///   - deviceName:
+            public init(
+                email: Swift.String,
+                username: Swift.String,
+                password: Swift.String,
+                platform: Components.Schemas.Platform,
+                deviceName: Swift.String? = nil
+            ) {
+                self.email = email
+                self.username = username
+                self.password = password
+                self.platform = platform
+                self.deviceName = deviceName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case email
+                case username
+                case password
+                case platform
+                case deviceName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/LoginRequest`.
+        public struct LoginRequest: Codable, Hashable, Sendable {
+            /// Email address or username.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LoginRequest/identifier`.
+            public var identifier: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LoginRequest/password`.
+            public var password: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LoginRequest/platform`.
+            public var platform: Components.Schemas.Platform
+            /// - Remark: Generated from `#/components/schemas/LoginRequest/deviceName`.
+            public var deviceName: Swift.String?
+            /// Creates a new `LoginRequest`.
+            ///
+            /// - Parameters:
+            ///   - identifier: Email address or username.
+            ///   - password:
+            ///   - platform:
+            ///   - deviceName:
+            public init(
+                identifier: Swift.String,
+                password: Swift.String,
+                platform: Components.Schemas.Platform,
+                deviceName: Swift.String? = nil
+            ) {
+                self.identifier = identifier
+                self.password = password
+                self.platform = platform
+                self.deviceName = deviceName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case identifier
+                case password
+                case platform
+                case deviceName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest`.
+        public struct GoogleSignInRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest/idToken`.
+            public var idToken: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest/platform`.
+            public var platform: Components.Schemas.Platform
+            /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest/deviceName`.
+            public var deviceName: Swift.String?
+            /// Creates a new `GoogleSignInRequest`.
+            ///
+            /// - Parameters:
+            ///   - idToken:
+            ///   - platform:
+            ///   - deviceName:
+            public init(
+                idToken: Swift.String,
+                platform: Components.Schemas.Platform,
+                deviceName: Swift.String? = nil
+            ) {
+                self.idToken = idToken
+                self.platform = platform
+                self.deviceName = deviceName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case idToken
+                case platform
+                case deviceName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RefreshRequest`.
+        public struct RefreshRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RefreshRequest/platform`.
+            public var platform: Components.Schemas.Platform
+            /// iOS only. The web app's token is in its cookie.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RefreshRequest/refreshToken`.
+            public var refreshToken: Swift.String?
+            /// Creates a new `RefreshRequest`.
+            ///
+            /// - Parameters:
+            ///   - platform:
+            ///   - refreshToken: iOS only. The web app's token is in its cookie.
+            public init(
+                platform: Components.Schemas.Platform,
+                refreshToken: Swift.String? = nil
+            ) {
+                self.platform = platform
+                self.refreshToken = refreshToken
+            }
+            public enum CodingKeys: String, CodingKey {
+                case platform
+                case refreshToken
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/LogoutRequest`.
+        public struct LogoutRequest: Codable, Hashable, Sendable {
+            /// iOS only. The web app's token is in its cookie.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogoutRequest/refreshToken`.
+            public var refreshToken: Swift.String?
+            /// Creates a new `LogoutRequest`.
+            ///
+            /// - Parameters:
+            ///   - refreshToken: iOS only. The web app's token is in its cookie.
+            public init(refreshToken: Swift.String? = nil) {
+                self.refreshToken = refreshToken
+            }
+            public enum CodingKeys: String, CodingKey {
+                case refreshToken
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TokenRequest`.
+        public struct TokenRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TokenRequest/token`.
+            public var token: Swift.String
+            /// Creates a new `TokenRequest`.
+            ///
+            /// - Parameters:
+            ///   - token:
+            public init(token: Swift.String) {
+                self.token = token
+            }
+            public enum CodingKeys: String, CodingKey {
+                case token
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ForgotPasswordRequest`.
+        public struct ForgotPasswordRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ForgotPasswordRequest/email`.
+            public var email: Swift.String
+            /// Creates a new `ForgotPasswordRequest`.
+            ///
+            /// - Parameters:
+            ///   - email:
+            public init(email: Swift.String) {
+                self.email = email
+            }
+            public enum CodingKeys: String, CodingKey {
+                case email
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest`.
+        public struct ResetPasswordRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/token`.
+            public var token: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/password`.
+            public var password: Swift.String
+            /// Creates a new `ResetPasswordRequest`.
+            ///
+            /// - Parameters:
+            ///   - token:
+            ///   - password:
+            public init(
+                token: Swift.String,
+                password: Swift.String
+            ) {
+                self.token = token
+                self.password = password
+            }
+            public enum CodingKeys: String, CodingKey {
+                case token
+                case password
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AuthResponse`.
+        public struct AuthResponse: Codable, Hashable, Sendable {
+            /// JWT for the Authorization header (Bearer). Valid for 15 minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthResponse/accessToken`.
+            public var accessToken: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AuthResponse/accessTokenExpiresAt`.
+            public var accessTokenExpiresAt: Foundation.Date
+            /// iOS only (keep it in the Keychain). Never sent to the web app, which gets an HttpOnly cookie.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthResponse/refreshToken`.
+            public var refreshToken: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AuthResponse/user`.
+            public var user: Components.Schemas.User
+            /// - Remark: Generated from `#/components/schemas/AuthResponse/isNewUser`.
+            public var isNewUser: Swift.Bool
+            /// Creates a new `AuthResponse`.
+            ///
+            /// - Parameters:
+            ///   - accessToken: JWT for the Authorization header (Bearer). Valid for 15 minutes.
+            ///   - accessTokenExpiresAt:
+            ///   - refreshToken: iOS only (keep it in the Keychain). Never sent to the web app, which gets an HttpOnly cookie.
+            ///   - user:
+            ///   - isNewUser:
+            public init(
+                accessToken: Swift.String,
+                accessTokenExpiresAt: Foundation.Date,
+                refreshToken: Swift.String? = nil,
+                user: Components.Schemas.User,
+                isNewUser: Swift.Bool
+            ) {
+                self.accessToken = accessToken
+                self.accessTokenExpiresAt = accessTokenExpiresAt
+                self.refreshToken = refreshToken
+                self.user = user
+                self.isNewUser = isNewUser
+            }
+            public enum CodingKeys: String, CodingKey {
+                case accessToken
+                case accessTokenExpiresAt
+                case refreshToken
+                case user
+                case isNewUser
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UsernameAvailability`.
+        public struct UsernameAvailability: Codable, Hashable, Sendable {
+            /// The username as it would be stored (lowercased, trimmed).
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsernameAvailability/username`.
+            public var username: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsernameAvailability/available`.
+            public var available: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UsernameAvailability/reason`.
+            @frozen public enum ReasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case taken = "taken"
+                case invalid = "invalid"
+                case reserved = "reserved"
+            }
+            /// - Remark: Generated from `#/components/schemas/UsernameAvailability/reason`.
+            public var reason: Components.Schemas.UsernameAvailability.ReasonPayload?
+            /// Creates a new `UsernameAvailability`.
+            ///
+            /// - Parameters:
+            ///   - username: The username as it would be stored (lowercased, trimmed).
+            ///   - available:
+            ///   - reason:
+            public init(
+                username: Swift.String,
+                available: Swift.Bool,
+                reason: Components.Schemas.UsernameAvailability.ReasonPayload? = nil
+            ) {
+                self.username = username
+                self.available = available
+                self.reason = reason
+            }
+            public enum CodingKeys: String, CodingKey {
+                case username
+                case available
+                case reason
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/User`.
+        public struct User: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/User/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/User/email`.
+            public var email: Swift.String
+            /// - Remark: Generated from `#/components/schemas/User/emailVerified`.
+            public var emailVerified: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/User/username`.
+            public var username: Swift.String
+            /// - Remark: Generated from `#/components/schemas/User/displayName`.
+            public var displayName: Swift.String?
+            /// ISO 3166 region that decides number and currency formatting ("RO" → 1.234,29 lei).
+            ///
+            /// - Remark: Generated from `#/components/schemas/User/region`.
+            public var region: Swift.String
+            /// - Remark: Generated from `#/components/schemas/User/hasPassword`.
+            public var hasPassword: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/User/linkedProviders`.
+            public var linkedProviders: [Components.Schemas.AuthProvider]
+            /// - Remark: Generated from `#/components/schemas/User/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `User`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - email:
+            ///   - emailVerified:
+            ///   - username:
+            ///   - displayName:
+            ///   - region: ISO 3166 region that decides number and currency formatting ("RO" → 1.234,29 lei).
+            ///   - hasPassword:
+            ///   - linkedProviders:
+            ///   - createdAt:
+            public init(
+                id: Swift.String,
+                email: Swift.String,
+                emailVerified: Swift.Bool,
+                username: Swift.String,
+                displayName: Swift.String? = nil,
+                region: Swift.String,
+                hasPassword: Swift.Bool,
+                linkedProviders: [Components.Schemas.AuthProvider],
+                createdAt: Foundation.Date
+            ) {
+                self.id = id
+                self.email = email
+                self.emailVerified = emailVerified
+                self.username = username
+                self.displayName = displayName
+                self.region = region
+                self.hasPassword = hasPassword
+                self.linkedProviders = linkedProviders
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case email
+                case emailVerified
+                case username
+                case displayName
+                case region
+                case hasPassword
+                case linkedProviders
+                case createdAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateMeRequest`.
+        public struct UpdateMeRequest: Codable, Hashable, Sendable {
+            /// Empty string clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateMeRequest/displayName`.
+            public var displayName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateMeRequest/username`.
+            public var username: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateMeRequest/region`.
+            public var region: Swift.String?
+            /// Creates a new `UpdateMeRequest`.
+            ///
+            /// - Parameters:
+            ///   - displayName: Empty string clears it.
+            ///   - username:
+            ///   - region:
+            public init(
+                displayName: Swift.String? = nil,
+                username: Swift.String? = nil,
+                region: Swift.String? = nil
+            ) {
+                self.displayName = displayName
+                self.username = username
+                self.region = region
+            }
+            public enum CodingKeys: String, CodingKey {
+                case displayName
+                case username
+                case region
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChangePasswordRequest`.
+        public struct ChangePasswordRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChangePasswordRequest/currentPassword`.
+            public var currentPassword: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChangePasswordRequest/newPassword`.
+            public var newPassword: Swift.String
+            /// Creates a new `ChangePasswordRequest`.
+            ///
+            /// - Parameters:
+            ///   - currentPassword:
+            ///   - newPassword:
+            public init(
+                currentPassword: Swift.String? = nil,
+                newPassword: Swift.String
+            ) {
+                self.currentPassword = currentPassword
+                self.newPassword = newPassword
+            }
+            public enum CodingKeys: String, CodingKey {
+                case currentPassword
+                case newPassword
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Household`.
+        public struct Household: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Household/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Household/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Household/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// IANA time zone, e.g. Europe/Bucharest.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Household/timezone`.
+            public var timezone: Swift.String
+            /// 1–28. With 10, the "November" budget runs 10 Nov – 9 Dec.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Household/monthStartDay`.
+            public var monthStartDay: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Household/canChangeHomeCurrency`.
+            public var canChangeHomeCurrency: Swift.Bool
+            /// Today's date in the household's time zone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Household/today`.
+            public var today: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Household/currentMonth`.
+            public var currentMonth: Components.Schemas.Month
+            /// Creates a new `Household`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - homeCurrency:
+            ///   - timezone: IANA time zone, e.g. Europe/Bucharest.
+            ///   - monthStartDay: 1–28. With 10, the "November" budget runs 10 Nov – 9 Dec.
+            ///   - canChangeHomeCurrency:
+            ///   - today: Today's date in the household's time zone.
+            ///   - currentMonth:
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                homeCurrency: Components.Schemas.CurrencyCode,
+                timezone: Swift.String,
+                monthStartDay: Swift.Int,
+                canChangeHomeCurrency: Swift.Bool,
+                today: Swift.String,
+                currentMonth: Components.Schemas.Month
+            ) {
+                self.id = id
+                self.name = name
+                self.homeCurrency = homeCurrency
+                self.timezone = timezone
+                self.monthStartDay = monthStartDay
+                self.canChangeHomeCurrency = canChangeHomeCurrency
+                self.today = today
+                self.currentMonth = currentMonth
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case homeCurrency
+                case timezone
+                case monthStartDay
+                case canChangeHomeCurrency
+                case today
+                case currentMonth
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateHouseholdRequest`.
+        public struct UpdateHouseholdRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateHouseholdRequest/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateHouseholdRequest/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode?
+            /// - Remark: Generated from `#/components/schemas/UpdateHouseholdRequest/timezone`.
+            public var timezone: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateHouseholdRequest/monthStartDay`.
+            public var monthStartDay: Swift.Int?
+            /// Creates a new `UpdateHouseholdRequest`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - homeCurrency:
+            ///   - timezone:
+            ///   - monthStartDay:
+            public init(
+                name: Swift.String? = nil,
+                homeCurrency: Components.Schemas.CurrencyCode? = nil,
+                timezone: Swift.String? = nil,
+                monthStartDay: Swift.Int? = nil
+            ) {
+                self.name = name
+                self.homeCurrency = homeCurrency
+                self.timezone = timezone
+                self.monthStartDay = monthStartDay
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case homeCurrency
+                case timezone
+                case monthStartDay
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Currency`.
+        public struct Currency: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Currency/code`.
+            public var code: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/Currency/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Currency/minorUnits`.
+            public var minorUnits: Swift.Int
+            /// Creates a new `Currency`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - name:
+            ///   - minorUnits:
+            public init(
+                code: Components.Schemas.CurrencyCode,
+                name: Swift.String,
+                minorUnits: Swift.Int
+            ) {
+                self.code = code
+                self.name = name
+                self.minorUnits = minorUnits
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case name
+                case minorUnits
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FxQuote`.
+        public struct FxQuote: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FxQuote/from`.
+            public var from: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/FxQuote/to`.
+            public var to: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/FxQuote/on`.
+            public var on: Swift.String
+            /// Units of `to` per one unit of `from`, as a decimal string.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FxQuote/rate`.
+            public var rate: Swift.String
+            /// The BNR day the rate comes from; null when from = to.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FxQuote/rateDate`.
+            public var rateDate: Swift.String?
+            /// The requested amount converted to `to`, in its minor units.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FxQuote/amountMinor`.
+            public var amountMinor: Swift.Int64?
+            /// Creates a new `FxQuote`.
+            ///
+            /// - Parameters:
+            ///   - from:
+            ///   - to:
+            ///   - on:
+            ///   - rate: Units of `to` per one unit of `from`, as a decimal string.
+            ///   - rateDate: The BNR day the rate comes from; null when from = to.
+            ///   - amountMinor: The requested amount converted to `to`, in its minor units.
+            public init(
+                from: Components.Schemas.CurrencyCode,
+                to: Components.Schemas.CurrencyCode,
+                on: Swift.String,
+                rate: Swift.String,
+                rateDate: Swift.String? = nil,
+                amountMinor: Swift.Int64? = nil
+            ) {
+                self.from = from
+                self.to = to
+                self.on = on
+                self.rate = rate
+                self.rateDate = rateDate
+                self.amountMinor = amountMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case from
+                case to
+                case on
+                case rate
+                case rateDate
+                case amountMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AccountRef`.
+        public struct AccountRef: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AccountRef/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AccountRef/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AccountRef/type`.
+            public var _type: Components.Schemas.AccountType
+            /// - Remark: Generated from `#/components/schemas/AccountRef/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// Creates a new `AccountRef`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - _type:
+            ///   - currency:
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                _type: Components.Schemas.AccountType,
+                currency: Components.Schemas.CurrencyCode
+            ) {
+                self.id = id
+                self.name = name
+                self._type = _type
+                self.currency = currency
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case _type = "type"
+                case currency
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Account`.
+        public struct Account: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Account/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Account/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Account/type`.
+            public var _type: Components.Schemas.AccountType
+            /// - Remark: Generated from `#/components/schemas/Account/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// Balance on openingBalanceOn (may be negative for a credit card).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Account/openingBalanceMinor`.
+            public var openingBalanceMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Account/openingBalanceOn`.
+            public var openingBalanceOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Account/includeInTotal`.
+            public var includeInTotal: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Account/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Account/archived`.
+            public var archived: Swift.Bool
+            /// Current balance in the account's currency (may be negative).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Account/balanceMinor`.
+            public var balanceMinor: Swift.Int64
+            /// ≈ the balance in the home currency at today's rate; null if no rate.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Account/balanceHomeMinor`.
+            public var balanceHomeMinor: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/Account/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Account/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Account/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `Account`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - _type:
+            ///   - currency:
+            ///   - openingBalanceMinor: Balance on openingBalanceOn (may be negative for a credit card).
+            ///   - openingBalanceOn:
+            ///   - includeInTotal:
+            ///   - sortOrder:
+            ///   - archived:
+            ///   - balanceMinor: Current balance in the account's currency (may be negative).
+            ///   - balanceHomeMinor: ≈ the balance in the home currency at today's rate; null if no rate.
+            ///   - rowVersion:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                _type: Components.Schemas.AccountType,
+                currency: Components.Schemas.CurrencyCode,
+                openingBalanceMinor: Swift.Int64,
+                openingBalanceOn: Swift.String,
+                includeInTotal: Swift.Bool,
+                sortOrder: Swift.Int,
+                archived: Swift.Bool,
+                balanceMinor: Swift.Int64,
+                balanceHomeMinor: Swift.Int64? = nil,
+                rowVersion: Swift.Int64,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.name = name
+                self._type = _type
+                self.currency = currency
+                self.openingBalanceMinor = openingBalanceMinor
+                self.openingBalanceOn = openingBalanceOn
+                self.includeInTotal = includeInTotal
+                self.sortOrder = sortOrder
+                self.archived = archived
+                self.balanceMinor = balanceMinor
+                self.balanceHomeMinor = balanceHomeMinor
+                self.rowVersion = rowVersion
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case _type = "type"
+                case currency
+                case openingBalanceMinor
+                case openingBalanceOn
+                case includeInTotal
+                case sortOrder
+                case archived
+                case balanceMinor
+                case balanceHomeMinor
+                case rowVersion
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AccountList`.
+        public struct AccountList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AccountList/items`.
+            public var items: [Components.Schemas.Account]
+            /// - Remark: Generated from `#/components/schemas/AccountList/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// Sum of non-archived accounts with includeInTotal, in the home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountList/totalHomeMinor`.
+            public var totalHomeMinor: Swift.Int64
+            /// True when the total includes converted balances (show "≈").
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountList/totalIsApproximate`.
+            public var totalIsApproximate: Swift.Bool
+            /// Creates a new `AccountList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - homeCurrency:
+            ///   - totalHomeMinor: Sum of non-archived accounts with includeInTotal, in the home currency.
+            ///   - totalIsApproximate: True when the total includes converted balances (show "≈").
+            public init(
+                items: [Components.Schemas.Account],
+                homeCurrency: Components.Schemas.CurrencyCode,
+                totalHomeMinor: Swift.Int64,
+                totalIsApproximate: Swift.Bool
+            ) {
+                self.items = items
+                self.homeCurrency = homeCurrency
+                self.totalHomeMinor = totalHomeMinor
+                self.totalIsApproximate = totalIsApproximate
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case homeCurrency
+                case totalHomeMinor
+                case totalIsApproximate
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateAccountRequest`.
+        public struct CreateAccountRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/type`.
+            public var _type: Components.Schemas.AccountType
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/openingBalanceMinor`.
+            public var openingBalanceMinor: Swift.Int64?
+            /// Defaults to the household's today.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/openingBalanceOn`.
+            public var openingBalanceOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/includeInTotal`.
+            public var includeInTotal: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/CreateAccountRequest/sortOrder`.
+            public var sortOrder: Swift.Int?
+            /// Creates a new `CreateAccountRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - _type:
+            ///   - currency:
+            ///   - openingBalanceMinor:
+            ///   - openingBalanceOn: Defaults to the household's today.
+            ///   - includeInTotal:
+            ///   - sortOrder:
+            public init(
+                id: Swift.String? = nil,
+                name: Swift.String,
+                _type: Components.Schemas.AccountType,
+                currency: Components.Schemas.CurrencyCode,
+                openingBalanceMinor: Swift.Int64? = nil,
+                openingBalanceOn: Swift.String? = nil,
+                includeInTotal: Swift.Bool? = nil,
+                sortOrder: Swift.Int? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self._type = _type
+                self.currency = currency
+                self.openingBalanceMinor = openingBalanceMinor
+                self.openingBalanceOn = openingBalanceOn
+                self.includeInTotal = includeInTotal
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case _type = "type"
+                case currency
+                case openingBalanceMinor
+                case openingBalanceOn
+                case includeInTotal
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest`.
+        public struct UpdateAccountRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/type`.
+            public var _type: Components.Schemas.AccountType
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/openingBalanceMinor`.
+            public var openingBalanceMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/openingBalanceOn`.
+            public var openingBalanceOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/includeInTotal`.
+            public var includeInTotal: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/archived`.
+            public var archived: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UpdateAccountRequest/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `UpdateAccountRequest`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - _type:
+            ///   - currency:
+            ///   - openingBalanceMinor:
+            ///   - openingBalanceOn:
+            ///   - includeInTotal:
+            ///   - sortOrder:
+            ///   - archived:
+            ///   - rowVersion:
+            public init(
+                name: Swift.String,
+                _type: Components.Schemas.AccountType,
+                currency: Components.Schemas.CurrencyCode,
+                openingBalanceMinor: Swift.Int64,
+                openingBalanceOn: Swift.String,
+                includeInTotal: Swift.Bool,
+                sortOrder: Swift.Int,
+                archived: Swift.Bool,
+                rowVersion: Swift.Int64
+            ) {
+                self.name = name
+                self._type = _type
+                self.currency = currency
+                self.openingBalanceMinor = openingBalanceMinor
+                self.openingBalanceOn = openingBalanceOn
+                self.includeInTotal = includeInTotal
+                self.sortOrder = sortOrder
+                self.archived = archived
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case _type = "type"
+                case currency
+                case openingBalanceMinor
+                case openingBalanceOn
+                case includeInTotal
+                case sortOrder
+                case archived
+                case rowVersion
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CategoryRef`.
+        public struct CategoryRef: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/color`.
+            public var color: Components.Schemas.CategoryColor
+            /// Phosphor icon name in kebab case, e.g. shopping-cart.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/icon`.
+            public var icon: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CategoryRef/isFixed`.
+            public var isFixed: Swift.Bool
+            /// Creates a new `CategoryRef`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - name:
+            ///   - color:
+            ///   - icon: Phosphor icon name in kebab case, e.g. shopping-cart.
+            ///   - isFixed:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.EntryKind,
+                name: Swift.String,
+                color: Components.Schemas.CategoryColor,
+                icon: Swift.String,
+                isFixed: Swift.Bool
+            ) {
+                self.id = id
+                self.kind = kind
+                self.name = name
+                self.color = color
+                self.icon = icon
+                self.isFixed = isFixed
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case name
+                case color
+                case icon
+                case isFixed
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Category`.
+        public struct Category: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Category/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/Category/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/color`.
+            public var color: Components.Schemas.CategoryColor
+            /// - Remark: Generated from `#/components/schemas/Category/icon`.
+            public var icon: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/isFixed`.
+            public var isFixed: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Category/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// Set on the 13 defaults (groceries, eating_out, …), null on categories people create.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Category/systemKey`.
+            public var systemKey: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Category/archived`.
+            public var archived: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Category/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `Category`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - name:
+            ///   - color:
+            ///   - icon:
+            ///   - isFixed:
+            ///   - sortOrder:
+            ///   - systemKey: Set on the 13 defaults (groceries, eating_out, …), null on categories people create.
+            ///   - archived:
+            ///   - rowVersion:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.EntryKind,
+                name: Swift.String,
+                color: Components.Schemas.CategoryColor,
+                icon: Swift.String,
+                isFixed: Swift.Bool,
+                sortOrder: Swift.Int,
+                systemKey: Swift.String? = nil,
+                archived: Swift.Bool,
+                rowVersion: Swift.Int64
+            ) {
+                self.id = id
+                self.kind = kind
+                self.name = name
+                self.color = color
+                self.icon = icon
+                self.isFixed = isFixed
+                self.sortOrder = sortOrder
+                self.systemKey = systemKey
+                self.archived = archived
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case name
+                case color
+                case icon
+                case isFixed
+                case sortOrder
+                case systemKey
+                case archived
+                case rowVersion
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest`.
+        public struct CreateCategoryRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/color`.
+            public var color: Components.Schemas.CategoryColor
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/icon`.
+            public var icon: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/isFixed`.
+            public var isFixed: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/CreateCategoryRequest/sortOrder`.
+            public var sortOrder: Swift.Int?
+            /// Creates a new `CreateCategoryRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - name:
+            ///   - color:
+            ///   - icon:
+            ///   - isFixed:
+            ///   - sortOrder:
+            public init(
+                id: Swift.String? = nil,
+                kind: Components.Schemas.EntryKind,
+                name: Swift.String,
+                color: Components.Schemas.CategoryColor,
+                icon: Swift.String,
+                isFixed: Swift.Bool? = nil,
+                sortOrder: Swift.Int? = nil
+            ) {
+                self.id = id
+                self.kind = kind
+                self.name = name
+                self.color = color
+                self.icon = icon
+                self.isFixed = isFixed
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case name
+                case color
+                case icon
+                case isFixed
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest`.
+        public struct UpdateCategoryRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/color`.
+            public var color: Components.Schemas.CategoryColor
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/icon`.
+            public var icon: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/isFixed`.
+            public var isFixed: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/archived`.
+            public var archived: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UpdateCategoryRequest/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `UpdateCategoryRequest`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - color:
+            ///   - icon:
+            ///   - isFixed:
+            ///   - sortOrder:
+            ///   - archived:
+            ///   - rowVersion:
+            public init(
+                name: Swift.String,
+                color: Components.Schemas.CategoryColor,
+                icon: Swift.String,
+                isFixed: Swift.Bool,
+                sortOrder: Swift.Int,
+                archived: Swift.Bool,
+                rowVersion: Swift.Int64
+            ) {
+                self.name = name
+                self.color = color
+                self.icon = icon
+                self.isFixed = isFixed
+                self.sortOrder = sortOrder
+                self.archived = archived
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case color
+                case icon
+                case isFixed
+                case sortOrder
+                case archived
+                case rowVersion
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Transaction`.
+        public struct Transaction: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Transaction/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transaction/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/Transaction/status`.
+            public var status: Components.Schemas.TransactionStatus
+            /// Merchant or short description ("Lidl").
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transaction/note`.
+            public var note: Swift.String?
+            /// Calendar day in the household's time zone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transaction/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/Transaction/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// - Remark: Generated from `#/components/schemas/Transaction/account`.
+            public var account: Components.Schemas.AccountRef
+            /// As entered, in `currency`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transaction/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/Transaction/accountAmountMinor`.
+            public var accountAmountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transaction/accountCurrency`.
+            public var accountCurrency: Components.Schemas.CurrencyCode
+            /// Frozen at entry; what budgets and totals add up.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/homeAmountMinor`.
+            public var homeAmountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transaction/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// homeCurrency per one unit of currency ("1" when they match).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/fxRate`.
+            public var fxRate: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transaction/fxRateDate`.
+            public var fxRateDate: Swift.String?
+            /// The subscription that created or matches this transaction.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transaction/recurringId`.
+            public var recurringId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Transaction/recurringOccurrenceOn`.
+            public var recurringOccurrenceOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Transaction/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transaction/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Transaction/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `Transaction`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - status:
+            ///   - title: Merchant or short description ("Lidl").
+            ///   - note:
+            ///   - occurredOn: Calendar day in the household's time zone.
+            ///   - occurredAt:
+            ///   - category:
+            ///   - account:
+            ///   - amountMinor: As entered, in `currency`.
+            ///   - currency:
+            ///   - accountAmountMinor:
+            ///   - accountCurrency:
+            ///   - homeAmountMinor: Frozen at entry; what budgets and totals add up.
+            ///   - homeCurrency:
+            ///   - fxRate: homeCurrency per one unit of currency ("1" when they match).
+            ///   - fxRateDate:
+            ///   - recurringId: The subscription that created or matches this transaction.
+            ///   - recurringOccurrenceOn:
+            ///   - rowVersion:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.EntryKind,
+                status: Components.Schemas.TransactionStatus,
+                title: Swift.String,
+                note: Swift.String? = nil,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                category: Components.Schemas.CategoryRef,
+                account: Components.Schemas.AccountRef,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                accountAmountMinor: Swift.Int64,
+                accountCurrency: Components.Schemas.CurrencyCode,
+                homeAmountMinor: Swift.Int64,
+                homeCurrency: Components.Schemas.CurrencyCode,
+                fxRate: Swift.String,
+                fxRateDate: Swift.String? = nil,
+                recurringId: Swift.String? = nil,
+                recurringOccurrenceOn: Swift.String? = nil,
+                rowVersion: Swift.Int64,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.kind = kind
+                self.status = status
+                self.title = title
+                self.note = note
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.category = category
+                self.account = account
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self.accountAmountMinor = accountAmountMinor
+                self.accountCurrency = accountCurrency
+                self.homeAmountMinor = homeAmountMinor
+                self.homeCurrency = homeCurrency
+                self.fxRate = fxRate
+                self.fxRateDate = fxRateDate
+                self.recurringId = recurringId
+                self.recurringOccurrenceOn = recurringOccurrenceOn
+                self.rowVersion = rowVersion
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case status
+                case title
+                case note
+                case occurredOn
+                case occurredAt
+                case category
+                case account
+                case amountMinor
+                case currency
+                case accountAmountMinor
+                case accountCurrency
+                case homeAmountMinor
+                case homeCurrency
+                case fxRate
+                case fxRateDate
+                case recurringId
+                case recurringOccurrenceOn
+                case rowVersion
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DayTotal`.
+        public struct DayTotal: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DayTotal/date`.
+            public var date: Swift.String
+            /// Posted expenses of the day matching the filters, in the home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DayTotal/expenseHomeMinor`.
+            public var expenseHomeMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/DayTotal/incomeHomeMinor`.
+            public var incomeHomeMinor: Swift.Int64
+            /// Creates a new `DayTotal`.
+            ///
+            /// - Parameters:
+            ///   - date:
+            ///   - expenseHomeMinor: Posted expenses of the day matching the filters, in the home currency.
+            ///   - incomeHomeMinor:
+            public init(
+                date: Swift.String,
+                expenseHomeMinor: Swift.Int64,
+                incomeHomeMinor: Swift.Int64
+            ) {
+                self.date = date
+                self.expenseHomeMinor = expenseHomeMinor
+                self.incomeHomeMinor = incomeHomeMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case date
+                case expenseHomeMinor
+                case incomeHomeMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TransactionPage`.
+        public struct TransactionPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TransactionPage/items`.
+            public var items: [Components.Schemas.Transaction]
+            /// - Remark: Generated from `#/components/schemas/TransactionPage/dayTotals`.
+            public var dayTotals: [Components.Schemas.DayTotal]
+            /// Pass as `cursor` to get the next page; null on the last page.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TransactionPage/nextCursor`.
+            public var nextCursor: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TransactionPage/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// Creates a new `TransactionPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - dayTotals:
+            ///   - nextCursor: Pass as `cursor` to get the next page; null on the last page.
+            ///   - homeCurrency:
+            public init(
+                items: [Components.Schemas.Transaction],
+                dayTotals: [Components.Schemas.DayTotal],
+                nextCursor: Swift.String? = nil,
+                homeCurrency: Components.Schemas.CurrencyCode
+            ) {
+                self.items = items
+                self.dayTotals = dayTotals
+                self.nextCursor = nextCursor
+                self.homeCurrency = homeCurrency
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case dayTotals
+                case nextCursor
+                case homeCurrency
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RepeatRule`.
+        public struct RepeatRule: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RepeatRule/frequency`.
+            public var frequency: Components.Schemas.Frequency
+            /// - Remark: Generated from `#/components/schemas/RepeatRule/intervalCount`.
+            public var intervalCount: Swift.Int?
+            /// Creates a new `RepeatRule`.
+            ///
+            /// - Parameters:
+            ///   - frequency:
+            ///   - intervalCount:
+            public init(
+                frequency: Components.Schemas.Frequency,
+                intervalCount: Swift.Int? = nil
+            ) {
+                self.frequency = frequency
+                self.intervalCount = intervalCount
+            }
+            public enum CodingKeys: String, CodingKey {
+                case frequency
+                case intervalCount
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest`.
+        public struct CreateTransactionRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// Merchant or note. Defaults to the category's name when empty.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/title`.
+            public var title: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/categoryId`.
+            public var categoryId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/accountId`.
+            public var accountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/CreateTransactionRequest/repeat`.
+            public var _repeat: Components.Schemas.RepeatRule?
+            /// Creates a new `CreateTransactionRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - title: Merchant or note. Defaults to the category's name when empty.
+            ///   - note:
+            ///   - occurredOn:
+            ///   - occurredAt:
+            ///   - categoryId:
+            ///   - accountId:
+            ///   - amountMinor:
+            ///   - currency:
+            ///   - _repeat:
+            public init(
+                id: Swift.String? = nil,
+                kind: Components.Schemas.EntryKind,
+                title: Swift.String? = nil,
+                note: Swift.String? = nil,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                categoryId: Swift.String,
+                accountId: Swift.String,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                _repeat: Components.Schemas.RepeatRule? = nil
+            ) {
+                self.id = id
+                self.kind = kind
+                self.title = title
+                self.note = note
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.categoryId = categoryId
+                self.accountId = accountId
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self._repeat = _repeat
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case title
+                case note
+                case occurredOn
+                case occurredAt
+                case categoryId
+                case accountId
+                case amountMinor
+                case currency
+                case _repeat = "repeat"
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest`.
+        public struct UpdateTransactionRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/categoryId`.
+            public var categoryId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/accountId`.
+            public var accountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/UpdateTransactionRequest/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `UpdateTransactionRequest`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - title:
+            ///   - note:
+            ///   - occurredOn:
+            ///   - occurredAt:
+            ///   - categoryId:
+            ///   - accountId:
+            ///   - amountMinor:
+            ///   - currency:
+            ///   - rowVersion:
+            public init(
+                kind: Components.Schemas.EntryKind,
+                title: Swift.String,
+                note: Swift.String? = nil,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                categoryId: Swift.String,
+                accountId: Swift.String,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                rowVersion: Swift.Int64
+            ) {
+                self.kind = kind
+                self.title = title
+                self.note = note
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.categoryId = categoryId
+                self.accountId = accountId
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case title
+                case note
+                case occurredOn
+                case occurredAt
+                case categoryId
+                case accountId
+                case amountMinor
+                case currency
+                case rowVersion
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConfirmTransactionRequest`.
+        public struct ConfirmTransactionRequest: Codable, Hashable, Sendable {
+            /// The amount actually charged, if it differs (same currency).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConfirmTransactionRequest/amountMinor`.
+            public var amountMinor: Swift.Int64?
+            /// Creates a new `ConfirmTransactionRequest`.
+            ///
+            /// - Parameters:
+            ///   - amountMinor: The amount actually charged, if it differs (same currency).
+            public init(amountMinor: Swift.Int64? = nil) {
+                self.amountMinor = amountMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case amountMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetPeriod`.
+        public struct BudgetPeriod: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/month`.
+            public var month: Components.Schemas.Month
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/startsOn`.
+            public var startsOn: Swift.String
+            /// First day after the period.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/endsBefore`.
+            public var endsBefore: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/daysInPeriod`.
+            public var daysInPeriod: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case past = "past"
+                case current = "current"
+                case future = "future"
+            }
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/state`.
+            public var state: Components.Schemas.BudgetPeriod.StatePayload
+            /// The household's today.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/today`.
+            public var today: Swift.String
+            /// (today − start + 1) / daysInPeriod for the current month; 1 for past, 0 for future months.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/elapsed`.
+            public var elapsed: Swift.Double
+            /// Days left including today (0 for past months).
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetPeriod/daysLeft`.
+            public var daysLeft: Swift.Int
+            /// Creates a new `BudgetPeriod`.
+            ///
+            /// - Parameters:
+            ///   - month:
+            ///   - startsOn:
+            ///   - endsBefore: First day after the period.
+            ///   - daysInPeriod:
+            ///   - state:
+            ///   - today: The household's today.
+            ///   - elapsed: (today − start + 1) / daysInPeriod for the current month; 1 for past, 0 for future months.
+            ///   - daysLeft: Days left including today (0 for past months).
+            public init(
+                month: Components.Schemas.Month,
+                startsOn: Swift.String,
+                endsBefore: Swift.String,
+                daysInPeriod: Swift.Int,
+                state: Components.Schemas.BudgetPeriod.StatePayload,
+                today: Swift.String,
+                elapsed: Swift.Double,
+                daysLeft: Swift.Int
+            ) {
+                self.month = month
+                self.startsOn = startsOn
+                self.endsBefore = endsBefore
+                self.daysInPeriod = daysInPeriod
+                self.state = state
+                self.today = today
+                self.elapsed = elapsed
+                self.daysLeft = daysLeft
+            }
+            public enum CodingKeys: String, CodingKey {
+                case month
+                case startsOn
+                case endsBefore
+                case daysInPeriod
+                case state
+                case today
+                case elapsed
+                case daysLeft
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetStatus`.
+        @frozen public enum BudgetStatus: String, Codable, Hashable, Sendable, CaseIterable {
+            case over = "over"
+            case ahead = "ahead"
+            case onTrack = "on_track"
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetLine`.
+        public struct BudgetLine: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// The month's limit in the home currency; null when the category has no budget.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/limitMinor`.
+            public var limitMinor: Swift.Int64?
+            /// Posted expenses in the period, home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// limit − spent (negative when over); null without a limit.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/leftMinor`.
+            public var leftMinor: Swift.Int64?
+            /// Which kind of budget row sets the limit this month; null without one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/scope`.
+            @frozen public enum ScopePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case ongoing = "ongoing"
+                case singleMonth = "single_month"
+            }
+            /// Which kind of budget row sets the limit this month; null without one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/scope`.
+            public var scope: Components.Schemas.BudgetLine.ScopePayload?
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/status`.
+            public var status: Components.Schemas.BudgetStatus
+            /// spent / limit (may exceed 1); null without a limit.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLine/usedRatio`.
+            public var usedRatio: Swift.Double?
+            /// Creates a new `BudgetLine`.
+            ///
+            /// - Parameters:
+            ///   - category:
+            ///   - limitMinor: The month's limit in the home currency; null when the category has no budget.
+            ///   - spentMinor: Posted expenses in the period, home currency.
+            ///   - leftMinor: limit − spent (negative when over); null without a limit.
+            ///   - scope: Which kind of budget row sets the limit this month; null without one.
+            ///   - status:
+            ///   - usedRatio: spent / limit (may exceed 1); null without a limit.
+            public init(
+                category: Components.Schemas.CategoryRef,
+                limitMinor: Swift.Int64? = nil,
+                spentMinor: Swift.Int64,
+                leftMinor: Swift.Int64? = nil,
+                scope: Components.Schemas.BudgetLine.ScopePayload? = nil,
+                status: Components.Schemas.BudgetStatus,
+                usedRatio: Swift.Double? = nil
+            ) {
+                self.category = category
+                self.limitMinor = limitMinor
+                self.spentMinor = spentMinor
+                self.leftMinor = leftMinor
+                self.scope = scope
+                self.status = status
+                self.usedRatio = usedRatio
+            }
+            public enum CodingKeys: String, CodingKey {
+                case category
+                case limitMinor
+                case spentMinor
+                case leftMinor
+                case scope
+                case status
+                case usedRatio
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetTotals`.
+        public struct BudgetTotals: Codable, Hashable, Sendable {
+            /// Sum of all limits.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/budgetMinor`.
+            public var budgetMinor: Swift.Int64
+            /// Spent in budgeted categories.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/leftMinor`.
+            public var leftMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/fixedLimitMinor`.
+            public var fixedLimitMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/flexLimitMinor`.
+            public var flexLimitMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/flexSpentMinor`.
+            public var flexSpentMinor: Swift.Int64
+            /// (flex limits − flex spent) / days left including today, rounded to whole major units; null outside the current month.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/perDayMinor`.
+            public var perDayMinor: Swift.Int64?
+            /// flex limits × elapsed − flex spent (negative = ahead of pace); null outside the current month.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/underPaceMinor`.
+            public var underPaceMinor: Swift.Int64?
+            /// Where the "Today" tick sits on the total bar, 0–1; null outside the current month.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/paceMarker`.
+            public var paceMarker: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/BudgetTotals/status`.
+            public var status: Components.Schemas.BudgetStatus
+            /// Creates a new `BudgetTotals`.
+            ///
+            /// - Parameters:
+            ///   - budgetMinor: Sum of all limits.
+            ///   - spentMinor: Spent in budgeted categories.
+            ///   - leftMinor:
+            ///   - fixedLimitMinor:
+            ///   - flexLimitMinor:
+            ///   - flexSpentMinor:
+            ///   - perDayMinor: (flex limits − flex spent) / days left including today, rounded to whole major units; null outside the current month.
+            ///   - underPaceMinor: flex limits × elapsed − flex spent (negative = ahead of pace); null outside the current month.
+            ///   - paceMarker: Where the "Today" tick sits on the total bar, 0–1; null outside the current month.
+            ///   - status:
+            public init(
+                budgetMinor: Swift.Int64,
+                spentMinor: Swift.Int64,
+                leftMinor: Swift.Int64,
+                fixedLimitMinor: Swift.Int64,
+                flexLimitMinor: Swift.Int64,
+                flexSpentMinor: Swift.Int64,
+                perDayMinor: Swift.Int64? = nil,
+                underPaceMinor: Swift.Int64? = nil,
+                paceMarker: Swift.Double? = nil,
+                status: Components.Schemas.BudgetStatus
+            ) {
+                self.budgetMinor = budgetMinor
+                self.spentMinor = spentMinor
+                self.leftMinor = leftMinor
+                self.fixedLimitMinor = fixedLimitMinor
+                self.flexLimitMinor = flexLimitMinor
+                self.flexSpentMinor = flexSpentMinor
+                self.perDayMinor = perDayMinor
+                self.underPaceMinor = underPaceMinor
+                self.paceMarker = paceMarker
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case budgetMinor
+                case spentMinor
+                case leftMinor
+                case fixedLimitMinor
+                case flexLimitMinor
+                case flexSpentMinor
+                case perDayMinor
+                case underPaceMinor
+                case paceMarker
+                case status
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PaceSegment`.
+        public struct PaceSegment: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PaceSegment/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// min(spent, limit) for the category; segment width = amount / budgetMinor.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PaceSegment/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// Creates a new `PaceSegment`.
+            ///
+            /// - Parameters:
+            ///   - category:
+            ///   - amountMinor: min(spent, limit) for the category; segment width = amount / budgetMinor.
+            public init(
+                category: Components.Schemas.CategoryRef,
+                amountMinor: Swift.Int64
+            ) {
+                self.category = category
+                self.amountMinor = amountMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case category
+                case amountMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetMonth`.
+        public struct BudgetMonth: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/period`.
+            public var period: Components.Schemas.BudgetPeriod
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// False when no expense category has a limit this month.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/hasBudget`.
+            public var hasBudget: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/totals`.
+            public var totals: Components.Schemas.BudgetTotals
+            /// Pace bar segments, fixed categories first, then flexible in sort order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/segments`.
+            public var segments: [Components.Schemas.PaceSegment]
+            /// Over first, then by usedRatio, highest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/flexible`.
+            public var flexible: [Components.Schemas.BudgetLine]
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/fixed`.
+            public var fixed: [Components.Schemas.BudgetLine]
+            /// Active expense categories without a limit this month (with what was spent).
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetMonth/unbudgeted`.
+            public var unbudgeted: [Components.Schemas.BudgetLine]
+            /// Creates a new `BudgetMonth`.
+            ///
+            /// - Parameters:
+            ///   - period:
+            ///   - homeCurrency:
+            ///   - hasBudget: False when no expense category has a limit this month.
+            ///   - totals:
+            ///   - segments: Pace bar segments, fixed categories first, then flexible in sort order.
+            ///   - flexible: Over first, then by usedRatio, highest first.
+            ///   - fixed:
+            ///   - unbudgeted: Active expense categories without a limit this month (with what was spent).
+            public init(
+                period: Components.Schemas.BudgetPeriod,
+                homeCurrency: Components.Schemas.CurrencyCode,
+                hasBudget: Swift.Bool,
+                totals: Components.Schemas.BudgetTotals,
+                segments: [Components.Schemas.PaceSegment],
+                flexible: [Components.Schemas.BudgetLine],
+                fixed: [Components.Schemas.BudgetLine],
+                unbudgeted: [Components.Schemas.BudgetLine]
+            ) {
+                self.period = period
+                self.homeCurrency = homeCurrency
+                self.hasBudget = hasBudget
+                self.totals = totals
+                self.segments = segments
+                self.flexible = flexible
+                self.fixed = fixed
+                self.unbudgeted = unbudgeted
+            }
+            public enum CodingKeys: String, CodingKey {
+                case period
+                case homeCurrency
+                case hasBudget
+                case totals
+                case segments
+                case flexible
+                case fixed
+                case unbudgeted
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SetBudgetsRequest`.
+        public struct SetBudgetsRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SetBudgetsRequest/month`.
+            public var month: Components.Schemas.Month
+            /// - Remark: Generated from `#/components/schemas/SetBudgetsRequest/scope`.
+            @frozen public enum ScopePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case ongoing = "ongoing"
+                case singleMonth = "single_month"
+            }
+            /// - Remark: Generated from `#/components/schemas/SetBudgetsRequest/scope`.
+            public var scope: Components.Schemas.SetBudgetsRequest.ScopePayload
+            /// - Remark: Generated from `#/components/schemas/SetBudgetsRequest/items`.
+            public var items: [Components.Schemas.BudgetLimitInput]
+            /// Creates a new `SetBudgetsRequest`.
+            ///
+            /// - Parameters:
+            ///   - month:
+            ///   - scope:
+            ///   - items:
+            public init(
+                month: Components.Schemas.Month,
+                scope: Components.Schemas.SetBudgetsRequest.ScopePayload,
+                items: [Components.Schemas.BudgetLimitInput]
+            ) {
+                self.month = month
+                self.scope = scope
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case month
+                case scope
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BudgetLimitInput`.
+        public struct BudgetLimitInput: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BudgetLimitInput/categoryId`.
+            public var categoryId: Swift.String
+            /// Limit in the home currency's minor units; null removes it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BudgetLimitInput/amountMinor`.
+            public var amountMinor: Swift.Int64?
+            /// Creates a new `BudgetLimitInput`.
+            ///
+            /// - Parameters:
+            ///   - categoryId:
+            ///   - amountMinor: Limit in the home currency's minor units; null removes it.
+            public init(
+                categoryId: Swift.String,
+                amountMinor: Swift.Int64? = nil
+            ) {
+                self.categoryId = categoryId
+                self.amountMinor = amountMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case categoryId
+                case amountMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Home`.
+        public struct Home: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Home/budget`.
+            public var budget: Components.Schemas.BudgetMonth
+            /// Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
+            /// ones lead), ties in category sort order. Compact Home shows the first 4 non-fixed ones;
+            /// desktop shows all of them (matches the design renders).
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/Home/attention`.
+            public var attention: [Components.Schemas.BudgetLine]
+            /// Subscription charges waiting for confirmation, oldest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Home/pending`.
+            public var pending: [Components.Schemas.Transaction]
+            /// The next 6 active subscription charges (expense and income), soonest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Home/upcoming`.
+            public var upcoming: [Components.Schemas.Subscription]
+            /// The 6 most recent posted transactions.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Home/recent`.
+            public var recent: [Components.Schemas.Transaction]
+            /// - Remark: Generated from `#/components/schemas/Home/pendingCount`.
+            public var pendingCount: Swift.Int
+            /// Active subscriptions due within the next 7 days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Home/dueSoonCount`.
+            public var dueSoonCount: Swift.Int
+            /// Creates a new `Home`.
+            ///
+            /// - Parameters:
+            ///   - budget:
+            ///   - attention: Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
+            ///   - pending: Subscription charges waiting for confirmation, oldest first.
+            ///   - upcoming: The next 6 active subscription charges (expense and income), soonest first.
+            ///   - recent: The 6 most recent posted transactions.
+            ///   - pendingCount:
+            ///   - dueSoonCount: Active subscriptions due within the next 7 days.
+            public init(
+                budget: Components.Schemas.BudgetMonth,
+                attention: [Components.Schemas.BudgetLine],
+                pending: [Components.Schemas.Transaction],
+                upcoming: [Components.Schemas.Subscription],
+                recent: [Components.Schemas.Transaction],
+                pendingCount: Swift.Int,
+                dueSoonCount: Swift.Int
+            ) {
+                self.budget = budget
+                self.attention = attention
+                self.pending = pending
+                self.upcoming = upcoming
+                self.recent = recent
+                self.pendingCount = pendingCount
+                self.dueSoonCount = dueSoonCount
+            }
+            public enum CodingKeys: String, CodingKey {
+                case budget
+                case attention
+                case pending
+                case upcoming
+                case recent
+                case pendingCount
+                case dueSoonCount
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MonthSummary`.
+        public struct MonthSummary: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MonthSummary/month`.
+            public var month: Components.Schemas.Month
+            /// All posted expenses in the period, home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MonthSummary/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/MonthSummary/budgetMinor`.
+            public var budgetMinor: Swift.Int64?
+            /// Creates a new `MonthSummary`.
+            ///
+            /// - Parameters:
+            ///   - month:
+            ///   - spentMinor: All posted expenses in the period, home currency.
+            ///   - budgetMinor:
+            public init(
+                month: Components.Schemas.Month,
+                spentMinor: Swift.Int64,
+                budgetMinor: Swift.Int64? = nil
+            ) {
+                self.month = month
+                self.spentMinor = spentMinor
+                self.budgetMinor = budgetMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case month
+                case spentMinor
+                case budgetMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MonthList`.
+        public struct MonthList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MonthList/current`.
+            public var current: Components.Schemas.Month
+            /// - Remark: Generated from `#/components/schemas/MonthList/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// From the next month back to the first month with data, newest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MonthList/items`.
+            public var items: [Components.Schemas.MonthSummary]
+            /// Creates a new `MonthList`.
+            ///
+            /// - Parameters:
+            ///   - current:
+            ///   - homeCurrency:
+            ///   - items: From the next month back to the first month with data, newest first.
+            public init(
+                current: Components.Schemas.Month,
+                homeCurrency: Components.Schemas.CurrencyCode,
+                items: [Components.Schemas.MonthSummary]
+            ) {
+                self.current = current
+                self.homeCurrency = homeCurrency
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case current
+                case homeCurrency
+                case items
+            }
+        }
+        /// week = 7 daily bars (Mon–Sun); month = daily bars of the budget month; six_months / year = monthly bars.
+        ///
+        /// - Remark: Generated from `#/components/schemas/InsightsPeriod`.
+        @frozen public enum InsightsPeriod: String, Codable, Hashable, Sendable, CaseIterable {
+            case week = "week"
+            case month = "month"
+            case sixMonths = "six_months"
+            case year = "year"
+        }
+        /// - Remark: Generated from `#/components/schemas/InsightsBar`.
+        public struct InsightsBar: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/InsightsBar/startsOn`.
+            public var startsOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InsightsBar/endsBefore`.
+            public var endsBefore: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InsightsBar/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// The bar containing today (drawn in tint).
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsBar/isCurrent`.
+            public var isCurrent: Swift.Bool
+            /// Projection for the current month bar (dashed outline); null otherwise.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsBar/projectedMinor`.
+            public var projectedMinor: Swift.Int64?
+            /// Creates a new `InsightsBar`.
+            ///
+            /// - Parameters:
+            ///   - startsOn:
+            ///   - endsBefore:
+            ///   - spentMinor:
+            ///   - isCurrent: The bar containing today (drawn in tint).
+            ///   - projectedMinor: Projection for the current month bar (dashed outline); null otherwise.
+            public init(
+                startsOn: Swift.String,
+                endsBefore: Swift.String,
+                spentMinor: Swift.Int64,
+                isCurrent: Swift.Bool,
+                projectedMinor: Swift.Int64? = nil
+            ) {
+                self.startsOn = startsOn
+                self.endsBefore = endsBefore
+                self.spentMinor = spentMinor
+                self.isCurrent = isCurrent
+                self.projectedMinor = projectedMinor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case startsOn
+                case endsBefore
+                case spentMinor
+                case isCurrent
+                case projectedMinor
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/InsightsHeadline`.
+        public struct InsightsHeadline: Codable, Hashable, Sendable {
+            /// Spent so far in the current unit (week, or budget month).
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsHeadline/currentMinor`.
+            public var currentMinor: Swift.Int64
+            /// Spent in the previous unit up to the same point; null when there's no data.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsHeadline/previousMinor`.
+            public var previousMinor: Swift.Int64?
+            /// (current − previous) / previous; null without previous data.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsHeadline/changeRatio`.
+            public var changeRatio: Swift.Double?
+            /// First day of the unit compared against (e.g. 2026-10-01 → "October").
+            ///
+            /// - Remark: Generated from `#/components/schemas/InsightsHeadline/comparedTo`.
+            public var comparedTo: Swift.String
+            /// Creates a new `InsightsHeadline`.
+            ///
+            /// - Parameters:
+            ///   - currentMinor: Spent so far in the current unit (week, or budget month).
+            ///   - previousMinor: Spent in the previous unit up to the same point; null when there's no data.
+            ///   - changeRatio: (current − previous) / previous; null without previous data.
+            ///   - comparedTo: First day of the unit compared against (e.g. 2026-10-01 → "October").
+            public init(
+                currentMinor: Swift.Int64,
+                previousMinor: Swift.Int64? = nil,
+                changeRatio: Swift.Double? = nil,
+                comparedTo: Swift.String
+            ) {
+                self.currentMinor = currentMinor
+                self.previousMinor = previousMinor
+                self.changeRatio = changeRatio
+                self.comparedTo = comparedTo
+            }
+            public enum CodingKeys: String, CodingKey {
+                case currentMinor
+                case previousMinor
+                case changeRatio
+                case comparedTo
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CategorySpend`.
+        public struct CategorySpend: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CategorySpend/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// - Remark: Generated from `#/components/schemas/CategorySpend/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// Share of all spending in the range, 0–1.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CategorySpend/share`.
+            public var share: Swift.Double
+            /// Creates a new `CategorySpend`.
+            ///
+            /// - Parameters:
+            ///   - category:
+            ///   - spentMinor:
+            ///   - share: Share of all spending in the range, 0–1.
+            public init(
+                category: Components.Schemas.CategoryRef,
+                spentMinor: Swift.Int64,
+                share: Swift.Double
+            ) {
+                self.category = category
+                self.spentMinor = spentMinor
+                self.share = share
+            }
+            public enum CodingKeys: String, CodingKey {
+                case category
+                case spentMinor
+                case share
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BiggestChange`.
+        public struct BiggestChange: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/currentMinor`.
+            public var currentMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/previousMinor`.
+            public var previousMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/changeRatio`.
+            public var changeRatio: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/comparedTo`.
+            public var comparedTo: Swift.String
+            /// The category's spending per bar of the range (last one is the current unit).
+            ///
+            /// - Remark: Generated from `#/components/schemas/BiggestChange/spark`.
+            public var spark: [Swift.Int64]
+            /// Creates a new `BiggestChange`.
+            ///
+            /// - Parameters:
+            ///   - category:
+            ///   - currentMinor:
+            ///   - previousMinor:
+            ///   - changeRatio:
+            ///   - comparedTo:
+            ///   - spark: The category's spending per bar of the range (last one is the current unit).
+            public init(
+                category: Components.Schemas.CategoryRef,
+                currentMinor: Swift.Int64,
+                previousMinor: Swift.Int64,
+                changeRatio: Swift.Double,
+                comparedTo: Swift.String,
+                spark: [Swift.Int64]
+            ) {
+                self.category = category
+                self.currentMinor = currentMinor
+                self.previousMinor = previousMinor
+                self.changeRatio = changeRatio
+                self.comparedTo = comparedTo
+                self.spark = spark
+            }
+            public enum CodingKeys: String, CodingKey {
+                case category
+                case currentMinor
+                case previousMinor
+                case changeRatio
+                case comparedTo
+                case spark
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BiggestDay`.
+        public struct BiggestDay: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BiggestDay/date`.
+            public var date: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BiggestDay/spentMinor`.
+            public var spentMinor: Swift.Int64
+            /// One category when it was ≥ 50% of the day, otherwise the top two.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BiggestDay/topCategories`.
+            public var topCategories: [Components.Schemas.CategoryRef]
+            /// Creates a new `BiggestDay`.
+            ///
+            /// - Parameters:
+            ///   - date:
+            ///   - spentMinor:
+            ///   - topCategories: One category when it was ≥ 50% of the day, otherwise the top two.
+            public init(
+                date: Swift.String,
+                spentMinor: Swift.Int64,
+                topCategories: [Components.Schemas.CategoryRef]
+            ) {
+                self.date = date
+                self.spentMinor = spentMinor
+                self.topCategories = topCategories
+            }
+            public enum CodingKeys: String, CodingKey {
+                case date
+                case spentMinor
+                case topCategories
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SubscriptionsHighlight`.
+        public struct SubscriptionsHighlight: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SubscriptionsHighlight/perMonthMinor`.
+            public var perMonthMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/SubscriptionsHighlight/activeCount`.
+            public var activeCount: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SubscriptionsHighlight/isApproximate`.
+            public var isApproximate: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/SubscriptionsHighlight/next`.
+            public var next: Components.Schemas.Subscription?
+            /// Creates a new `SubscriptionsHighlight`.
+            ///
+            /// - Parameters:
+            ///   - perMonthMinor:
+            ///   - activeCount:
+            ///   - isApproximate:
+            ///   - next:
+            public init(
+                perMonthMinor: Swift.Int64,
+                activeCount: Swift.Int,
+                isApproximate: Swift.Bool,
+                next: Components.Schemas.Subscription? = nil
+            ) {
+                self.perMonthMinor = perMonthMinor
+                self.activeCount = activeCount
+                self.isApproximate = isApproximate
+                self.next = next
+            }
+            public enum CodingKeys: String, CodingKey {
+                case perMonthMinor
+                case activeCount
+                case isApproximate
+                case next
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Insights`.
+        public struct Insights: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Insights/period`.
+            public var period: Components.Schemas.InsightsPeriod
+            /// - Remark: Generated from `#/components/schemas/Insights/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/Insights/startsOn`.
+            public var startsOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Insights/endsBefore`.
+            public var endsBefore: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Insights/bars`.
+            public var bars: [Components.Schemas.InsightsBar]
+            /// Average of completed bars with data (needs at least 2); null otherwise.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Insights/averageMinor`.
+            public var averageMinor: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/Insights/headline`.
+            public var headline: Components.Schemas.InsightsHeadline
+            /// Spending per category over the whole range, largest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Insights/byCategory`.
+            public var byCategory: [Components.Schemas.CategorySpend]
+            /// - Remark: Generated from `#/components/schemas/Insights/biggestChange`.
+            public var biggestChange: Components.Schemas.BiggestChange?
+            /// - Remark: Generated from `#/components/schemas/Insights/biggestDay`.
+            public var biggestDay: Components.Schemas.BiggestDay?
+            /// - Remark: Generated from `#/components/schemas/Insights/subscriptions`.
+            public var subscriptions: Components.Schemas.SubscriptionsHighlight
+            /// Creates a new `Insights`.
+            ///
+            /// - Parameters:
+            ///   - period:
+            ///   - homeCurrency:
+            ///   - startsOn:
+            ///   - endsBefore:
+            ///   - bars:
+            ///   - averageMinor: Average of completed bars with data (needs at least 2); null otherwise.
+            ///   - headline:
+            ///   - byCategory: Spending per category over the whole range, largest first.
+            ///   - biggestChange:
+            ///   - biggestDay:
+            ///   - subscriptions:
+            public init(
+                period: Components.Schemas.InsightsPeriod,
+                homeCurrency: Components.Schemas.CurrencyCode,
+                startsOn: Swift.String,
+                endsBefore: Swift.String,
+                bars: [Components.Schemas.InsightsBar],
+                averageMinor: Swift.Int64? = nil,
+                headline: Components.Schemas.InsightsHeadline,
+                byCategory: [Components.Schemas.CategorySpend],
+                biggestChange: Components.Schemas.BiggestChange? = nil,
+                biggestDay: Components.Schemas.BiggestDay? = nil,
+                subscriptions: Components.Schemas.SubscriptionsHighlight
+            ) {
+                self.period = period
+                self.homeCurrency = homeCurrency
+                self.startsOn = startsOn
+                self.endsBefore = endsBefore
+                self.bars = bars
+                self.averageMinor = averageMinor
+                self.headline = headline
+                self.byCategory = byCategory
+                self.biggestChange = biggestChange
+                self.biggestDay = biggestDay
+                self.subscriptions = subscriptions
+            }
+            public enum CodingKeys: String, CodingKey {
+                case period
+                case homeCurrency
+                case startsOn
+                case endsBefore
+                case bars
+                case averageMinor
+                case headline
+                case byCategory
+                case biggestChange
+                case biggestDay
+                case subscriptions
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Subscription`.
+        public struct Subscription: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Subscription/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Subscription/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/Subscription/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Subscription/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Subscription/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Subscription/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// ≈ amount in the home currency at today's rate (same as amountMinor when no conversion); null if no rate.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Subscription/amountHomeMinor`.
+            public var amountHomeMinor: Swift.Int64?
+            /// ≈ cost per month in the home currency (weekly × 52/12, yearly ÷ 12, ÷ intervalCount); null if no rate.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Subscription/monthlyHomeMinor`.
+            public var monthlyHomeMinor: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/Subscription/account`.
+            public var account: Components.Schemas.AccountRef
+            /// - Remark: Generated from `#/components/schemas/Subscription/category`.
+            public var category: Components.Schemas.CategoryRef
+            /// - Remark: Generated from `#/components/schemas/Subscription/frequency`.
+            public var frequency: Components.Schemas.Frequency
+            /// - Remark: Generated from `#/components/schemas/Subscription/intervalCount`.
+            public var intervalCount: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Subscription/startsOn`.
+            public var startsOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Subscription/nextDueOn`.
+            public var nextDueOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Subscription/endsOn`.
+            public var endsOn: Swift.String?
+            /// nextDueOn − the household's today (0 = today).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Subscription/daysUntilDue`.
+            public var daysUntilDue: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Subscription/isActive`.
+            public var isActive: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Subscription/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `Subscription`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - title:
+            ///   - note:
+            ///   - amountMinor:
+            ///   - currency:
+            ///   - amountHomeMinor: ≈ amount in the home currency at today's rate (same as amountMinor when no conversion); null if no rate.
+            ///   - monthlyHomeMinor: ≈ cost per month in the home currency (weekly × 52/12, yearly ÷ 12, ÷ intervalCount); null if no rate.
+            ///   - account:
+            ///   - category:
+            ///   - frequency:
+            ///   - intervalCount:
+            ///   - startsOn:
+            ///   - nextDueOn:
+            ///   - endsOn:
+            ///   - daysUntilDue: nextDueOn − the household's today (0 = today).
+            ///   - isActive:
+            ///   - rowVersion:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.EntryKind,
+                title: Swift.String,
+                note: Swift.String? = nil,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                amountHomeMinor: Swift.Int64? = nil,
+                monthlyHomeMinor: Swift.Int64? = nil,
+                account: Components.Schemas.AccountRef,
+                category: Components.Schemas.CategoryRef,
+                frequency: Components.Schemas.Frequency,
+                intervalCount: Swift.Int,
+                startsOn: Swift.String,
+                nextDueOn: Swift.String,
+                endsOn: Swift.String? = nil,
+                daysUntilDue: Swift.Int,
+                isActive: Swift.Bool,
+                rowVersion: Swift.Int64
+            ) {
+                self.id = id
+                self.kind = kind
+                self.title = title
+                self.note = note
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self.amountHomeMinor = amountHomeMinor
+                self.monthlyHomeMinor = monthlyHomeMinor
+                self.account = account
+                self.category = category
+                self.frequency = frequency
+                self.intervalCount = intervalCount
+                self.startsOn = startsOn
+                self.nextDueOn = nextDueOn
+                self.endsOn = endsOn
+                self.daysUntilDue = daysUntilDue
+                self.isActive = isActive
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case title
+                case note
+                case amountMinor
+                case currency
+                case amountHomeMinor
+                case monthlyHomeMinor
+                case account
+                case category
+                case frequency
+                case intervalCount
+                case startsOn
+                case nextDueOn
+                case endsOn
+                case daysUntilDue
+                case isActive
+                case rowVersion
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SubscriptionList`.
+        public struct SubscriptionList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/homeCurrency`.
+            public var homeCurrency: Components.Schemas.CurrencyCode
+            /// ≈ monthly cost of active expense subscriptions, home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/perMonthMinor`.
+            public var perMonthMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/perYearMinor`.
+            public var perYearMinor: Swift.Int64
+            /// Active expense subscriptions.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/activeCount`.
+            public var activeCount: Swift.Int
+            /// True when the totals include converted amounts (show "≈").
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/isApproximate`.
+            public var isApproximate: Swift.Bool
+            /// perMonth / this month's total budget, 0–1; null without a budget.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/shareOfBudget`.
+            public var shareOfBudget: Swift.Double?
+            /// Active subscriptions due within 7 days, soonest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/nextSevenDays`.
+            public var nextSevenDays: [Components.Schemas.Subscription]
+            /// ≈ total of the expense ones due within 7 days, home currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/nextSevenDaysHomeMinor`.
+            public var nextSevenDaysHomeMinor: Swift.Int64
+            /// The other active subscriptions, soonest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/later`.
+            public var later: [Components.Schemas.Subscription]
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/paused`.
+            public var paused: [Components.Schemas.Subscription]
+            /// Charges waiting for confirmation.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SubscriptionList/pendingCount`.
+            public var pendingCount: Swift.Int
+            /// Creates a new `SubscriptionList`.
+            ///
+            /// - Parameters:
+            ///   - homeCurrency:
+            ///   - perMonthMinor: ≈ monthly cost of active expense subscriptions, home currency.
+            ///   - perYearMinor:
+            ///   - activeCount: Active expense subscriptions.
+            ///   - isApproximate: True when the totals include converted amounts (show "≈").
+            ///   - shareOfBudget: perMonth / this month's total budget, 0–1; null without a budget.
+            ///   - nextSevenDays: Active subscriptions due within 7 days, soonest first.
+            ///   - nextSevenDaysHomeMinor: ≈ total of the expense ones due within 7 days, home currency.
+            ///   - later: The other active subscriptions, soonest first.
+            ///   - paused:
+            ///   - pendingCount: Charges waiting for confirmation.
+            public init(
+                homeCurrency: Components.Schemas.CurrencyCode,
+                perMonthMinor: Swift.Int64,
+                perYearMinor: Swift.Int64,
+                activeCount: Swift.Int,
+                isApproximate: Swift.Bool,
+                shareOfBudget: Swift.Double? = nil,
+                nextSevenDays: [Components.Schemas.Subscription],
+                nextSevenDaysHomeMinor: Swift.Int64,
+                later: [Components.Schemas.Subscription],
+                paused: [Components.Schemas.Subscription],
+                pendingCount: Swift.Int
+            ) {
+                self.homeCurrency = homeCurrency
+                self.perMonthMinor = perMonthMinor
+                self.perYearMinor = perYearMinor
+                self.activeCount = activeCount
+                self.isApproximate = isApproximate
+                self.shareOfBudget = shareOfBudget
+                self.nextSevenDays = nextSevenDays
+                self.nextSevenDaysHomeMinor = nextSevenDaysHomeMinor
+                self.later = later
+                self.paused = paused
+                self.pendingCount = pendingCount
+            }
+            public enum CodingKeys: String, CodingKey {
+                case homeCurrency
+                case perMonthMinor
+                case perYearMinor
+                case activeCount
+                case isApproximate
+                case shareOfBudget
+                case nextSevenDays
+                case nextSevenDaysHomeMinor
+                case later
+                case paused
+                case pendingCount
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest`.
+        public struct CreateSubscriptionRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/kind`.
+            public var kind: Components.Schemas.EntryKind
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/accountId`.
+            public var accountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/categoryId`.
+            public var categoryId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/frequency`.
+            public var frequency: Components.Schemas.Frequency
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/intervalCount`.
+            public var intervalCount: Swift.Int?
+            /// First charge. Past dates are fine; the job doesn't backfill before today.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/startsOn`.
+            public var startsOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateSubscriptionRequest/endsOn`.
+            public var endsOn: Swift.String?
+            /// Creates a new `CreateSubscriptionRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - title:
+            ///   - note:
+            ///   - amountMinor:
+            ///   - currency:
+            ///   - accountId:
+            ///   - categoryId:
+            ///   - frequency:
+            ///   - intervalCount:
+            ///   - startsOn: First charge. Past dates are fine; the job doesn't backfill before today.
+            ///   - endsOn:
+            public init(
+                id: Swift.String? = nil,
+                kind: Components.Schemas.EntryKind,
+                title: Swift.String,
+                note: Swift.String? = nil,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                accountId: Swift.String,
+                categoryId: Swift.String,
+                frequency: Components.Schemas.Frequency,
+                intervalCount: Swift.Int? = nil,
+                startsOn: Swift.String,
+                endsOn: Swift.String? = nil
+            ) {
+                self.id = id
+                self.kind = kind
+                self.title = title
+                self.note = note
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self.accountId = accountId
+                self.categoryId = categoryId
+                self.frequency = frequency
+                self.intervalCount = intervalCount
+                self.startsOn = startsOn
+                self.endsOn = endsOn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case title
+                case note
+                case amountMinor
+                case currency
+                case accountId
+                case categoryId
+                case frequency
+                case intervalCount
+                case startsOn
+                case endsOn
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest`.
+        public struct UpdateSubscriptionRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/amountMinor`.
+            public var amountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/currency`.
+            public var currency: Components.Schemas.CurrencyCode
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/accountId`.
+            public var accountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/categoryId`.
+            public var categoryId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/frequency`.
+            public var frequency: Components.Schemas.Frequency
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/intervalCount`.
+            public var intervalCount: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/startsOn`.
+            public var startsOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/endsOn`.
+            public var endsOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/isActive`.
+            public var isActive: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/UpdateSubscriptionRequest/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `UpdateSubscriptionRequest`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - note:
+            ///   - amountMinor:
+            ///   - currency:
+            ///   - accountId:
+            ///   - categoryId:
+            ///   - frequency:
+            ///   - intervalCount:
+            ///   - startsOn:
+            ///   - endsOn:
+            ///   - isActive:
+            ///   - rowVersion:
+            public init(
+                title: Swift.String,
+                note: Swift.String? = nil,
+                amountMinor: Swift.Int64,
+                currency: Components.Schemas.CurrencyCode,
+                accountId: Swift.String,
+                categoryId: Swift.String,
+                frequency: Components.Schemas.Frequency,
+                intervalCount: Swift.Int,
+                startsOn: Swift.String,
+                endsOn: Swift.String? = nil,
+                isActive: Swift.Bool,
+                rowVersion: Swift.Int64
+            ) {
+                self.title = title
+                self.note = note
+                self.amountMinor = amountMinor
+                self.currency = currency
+                self.accountId = accountId
+                self.categoryId = categoryId
+                self.frequency = frequency
+                self.intervalCount = intervalCount
+                self.startsOn = startsOn
+                self.endsOn = endsOn
+                self.isActive = isActive
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case note
+                case amountMinor
+                case currency
+                case accountId
+                case categoryId
+                case frequency
+                case intervalCount
+                case startsOn
+                case endsOn
+                case isActive
+                case rowVersion
+            }
+        }
     }
 }

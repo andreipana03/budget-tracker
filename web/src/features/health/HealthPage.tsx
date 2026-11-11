@@ -1,38 +1,28 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Screen } from '@/app/Screen'
+import { List, Row } from '@/components/ui/List'
+import { SkeletonRows } from '@/components/ui/States'
 
 import { useHealth } from './useHealth'
 
+/** /status — is the API up, and can it reach its database? */
 export function HealthPage() {
   const { data, isPending, isError } = useHealth()
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Budget Tracker</CardTitle>
-          <CardDescription>System status</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {isPending && <p className="text-muted-foreground">Checking…</p>}
-          {isError && <StatusRow label="API" value="unreachable" healthy={false} />}
-          {data && (
-            <>
-              <StatusRow label="API" value={data.status} healthy={data.status === 'ok'} />
-              <StatusRow label="Database" value={data.database} healthy={data.database === 'up'} />
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+    <Screen title="Status" hideToolbarActions>
+      <h2 className="sr-only">System status</h2>
+      {isPending ? (
+        <SkeletonRows count={2} label="Checking" />
+      ) : (
+        <List>
+          <Row title="API" trailing={<StatusValue value={isError ? 'unreachable' : (data?.status ?? '—')} healthy={!isError && data?.status === 'ok'} />} />
+          {data && <Row title="Database" trailing={<StatusValue value={data.database} healthy={data.database === 'up'} />} />}
+        </List>
+      )}
+    </Screen>
   )
 }
 
-function StatusRow({ label, value, healthy }: { label: string; value: string; healthy: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span>{label}</span>
-      <Badge variant={healthy ? 'default' : 'destructive'}>{value}</Badge>
-    </div>
-  )
+function StatusValue({ value, healthy }: { value: string; healthy: boolean }) {
+  return <span className={healthy ? 'text-positive' : 'text-negative'}>{value}</span>
 }

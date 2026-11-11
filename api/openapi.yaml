@@ -2,19 +2,48 @@
 # After changing this file, run `make generate` from the repo root.
 #
 # Stays on OpenAPI 3.0.x because oapi-codegen does not support 3.1.
+#
+# Conventions (docs/database/postgres-schema-and-business-rules.md):
+# - JSON fields are camelCase. Ids are UUIDs (v7); clients may send their own on create.
+# - Money is integer minor units (`…Minor`, int64) next to its ISO currency code, always positive.
+#   Direction comes from `kind` (expense / income). Exchange rates are decimal strings.
+# - Synced resources carry `rowVersion`. PUT replaces the whole object and must send the
+#   rowVersion it last saw; a stale one is answered with 409 `version_conflict`.
+# - Every error is an `Error` body with a stable `code`.
+# - Every operation needs a bearer access token unless it declares `security: []`.
+#   The web app's refresh token travels in an HttpOnly cookie that is deliberately not
+#   described here (swift-openapi-generator can't handle cookie parameters); iOS sends it
+#   in the request body instead.
 openapi: 3.0.3
 info:
   title: Budget Tracker API
-  version: 0.1.0
+  version: 0.2.0
 servers:
   - url: http://localhost:8080
     description: Local development
+security:
+  - bearerAuth: []
+tags:
+  - name: system
+  - name: auth
+  - name: me
+  - name: household
+  - name: reference
+  - name: accounts
+  - name: categories
+  - name: transactions
+  - name: budgets
+  - name: screens
+  - name: subscriptions
+
 paths:
+  # ---------------------------------------------------------------- system
   /health:
     get:
       operationId: getHealth
       summary: Report the status of the API and its database
       tags: [system]
+      security: []
       responses:
         "200":
           description: The API and its database are working
@@ -28,8 +57,948 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+
+  # ---------------------------------------------------------------- auth
+  /auth/register:
+    post:
+      operationId: register
+      summary: Create an account with email, username and password, and sign in
+      description: |
+        Creates the user, their household (RON, Europe/Bucharest, month start day 1, 13 default
+        categories) and a "Cash" account, sends a verification email, and signs in.
+        Errors: 409 `email_taken` / `username_taken`, 422 `validation_failed` (see `fields`).
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Signed in as the new user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/login:
+    post:
+      operationId: login
+      summary: Sign in with an email or username and a password
+      description: |
+        `identifier` containing "@" is treated as an email, otherwise as a username.
+        Wrong identifier or password: 401 `invalid_credentials` (same answer for both).
+        Too many attempts: 429 `rate_limited`.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/google:
+    post:
+      operationId: signInWithGoogle
+      summary: Sign in or sign up with a Google ID token
+      description: |
+        The web app gets the ID token from Google Identity Services; iOS from GoogleSignIn.
+        Linking follows the DB doc § 4: known Google account → that user; verified email of an
+        existing user → linked to them; otherwise a new user (username generated from the email).
+        503 `google_not_configured` when the server has no Google client ids.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleSignInRequest"
+      responses:
+        "200":
+          description: Signed in (`isNewUser` says whether the account was just created)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: Exchange a refresh token for a new access token
+      description: |
+        Web: the refresh token comes from the HttpOnly cookie and a rotated one is set the same way.
+        iOS: send `refreshToken` in the body; the rotated one comes back in the body.
+        401 `session_expired` when the token is unknown, expired, revoked or was reused.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: A fresh access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/logout:
+    post:
+      operationId: signOut
+      summary: Sign out this device
+      description: Revokes the session of the presented refresh token (cookie or body) and clears the cookie. Always succeeds.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "204":
+          description: Signed out
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/verify-email:
+    post:
+      operationId: verifyEmail
+      summary: Confirm an email address with the token from the verification link
+      description: 400 `invalid_token` when the token is unknown, used, expired or for an old address.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "204":
+          description: The email address is verified
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/forgot-password:
+    post:
+      operationId: requestPasswordReset
+      summary: Email a password reset link
+      description: Answers 204 whether or not the address belongs to a user.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        "204":
+          description: If the address has an account, a link is on its way
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      summary: Set a new password with the token from the reset link
+      description: Signs out every session of the user. 400 `invalid_token`, 422 `validation_failed`.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "204":
+          description: The password is changed
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/username-available:
+    get:
+      operationId: checkUsername
+      summary: Check whether a username can be used
+      tags: [auth]
+      security: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Whether the username is free and valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsernameAvailability"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- me
+  /me:
+    get:
+      operationId: getMe
+      summary: The signed-in user
+      tags: [me]
+      responses:
+        "200":
+          description: The signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      operationId: updateMe
+      summary: Change name, username or formatting region
+      description: 409 `username_taken`, 422 `validation_failed`.
+      tags: [me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMeRequest"
+      responses:
+        "200":
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteMe
+      summary: Delete the account and all of its data
+      description: Irreversible. Removes the user, their sessions and, when they're its last member, the household with all its data.
+      tags: [me]
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Error"
+  /me/password:
+    post:
+      operationId: changePassword
+      summary: Change the password, or set one for a Google-only account
+      description: |
+        `currentPassword` is required when the user has a password (401 `invalid_credentials` if wrong).
+        Signs out every other session. 422 `validation_failed` for a weak password.
+      tags: [me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: The password is changed
+        default:
+          $ref: "#/components/responses/Error"
+  /me/resend-verification:
+    post:
+      operationId: resendVerification
+      summary: Send the email verification link again
+      description: 409 `already_verified` when the address is already verified. 429 `rate_limited`.
+      tags: [me]
+      responses:
+        "204":
+          description: A new link is on its way
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- household
+  /household:
+    get:
+      operationId: getHousehold
+      summary: The signed-in user's household settings
+      tags: [household]
+      responses:
+        "200":
+          description: The household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Household"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      operationId: updateHousehold
+      summary: Change home currency, time zone or the day budget months start
+      description: |
+        The home currency can change only while the household has no transactions and no
+        subscriptions (409 `home_currency_locked`). 422 `validation_failed` for an unknown time zone.
+      tags: [household]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHouseholdRequest"
+      responses:
+        "200":
+          description: The updated household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Household"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- reference
+  /currencies:
+    get:
+      operationId: listCurrencies
+      summary: Currencies the app supports
+      tags: [reference]
+      responses:
+        "200":
+          description: Every supported currency
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Currency"
+        default:
+          $ref: "#/components/responses/Error"
+  /fx/quote:
+    get:
+      operationId: getFxQuote
+      summary: The BNR rate between two currencies on a day, optionally applied to an amount
+      description: 422 `fx_rate_unavailable` when there is no rate on or before that day.
+      tags: [reference]
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/CurrencyCode"
+        - name: to
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/CurrencyCode"
+        - name: "on"
+          in: query
+          description: Defaults to the household's today.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: amountMinor
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 1000000000000000
+      responses:
+        "200":
+          description: The rate (and the converted amount when one was given)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FxQuote"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- accounts
+  /accounts:
+    get:
+      operationId: listAccounts
+      summary: Accounts with their current balances and the ≈ total in the home currency
+      tags: [accounts]
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: The household's accounts, in sort order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountList"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createAccount
+      summary: Add an account
+      description: 409 `name_taken`. Idempotent when the same `id` is sent again.
+      tags: [accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+      responses:
+        "201":
+          description: The new account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        default:
+          $ref: "#/components/responses/Error"
+  /accounts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    put:
+      operationId: updateAccount
+      summary: Replace an account's editable fields
+      description: |
+        409 `version_conflict`, 409 `name_taken`, 409 `account_currency_locked` (currency can't
+        change once the account has transactions or subscriptions).
+      tags: [accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest"
+      responses:
+        "200":
+          description: The updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteAccount
+      summary: Delete an account, or archive it when it has history
+      tags: [accounts]
+      responses:
+        "200":
+          description: What happened to the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- categories
+  /categories:
+    get:
+      operationId: listCategories
+      summary: Expense and income categories, in sort order
+      tags: [categories]
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: The household's categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createCategory
+      summary: Add a category
+      description: 409 `name_taken`. Idempotent when the same `id` is sent again.
+      tags: [categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: The new category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        default:
+          $ref: "#/components/responses/Error"
+  /categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    put:
+      operationId: updateCategory
+      summary: Replace a category's editable fields
+      description: 409 `version_conflict`, 409 `name_taken`. `kind` never changes.
+      tags: [categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: The updated category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteCategory
+      summary: Delete a category, or archive it when it has history
+      tags: [categories]
+      responses:
+        "200":
+          description: What happened to the category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- transactions
+  /transactions:
+    get:
+      operationId: listTransactions
+      summary: Transactions, newest first, a page at a time
+      description: |
+        Ordered by occurredOn desc, occurredAt desc, id desc. Soft-deleted rows are never returned.
+        `dayTotals` covers every day that appears in `items` (computed over all matching
+        transactions of that day, not only this page).
+      tags: [transactions]
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/EntryKind"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/TransactionStatus"
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: month
+          in: query
+          description: A budget month (its period honours the household's month start day).
+          required: false
+          schema:
+            $ref: "#/components/schemas/Month"
+        - name: from
+          in: query
+          description: First day to include.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Last day to include.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: q
+          in: query
+          description: Case-insensitive search in title and note.
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+        - name: cursor
+          in: query
+          description: The `nextCursor` of the previous page.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: One page of transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionPage"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createTransaction
+      summary: Add an expense or income
+      description: |
+        Converts and freezes the account-currency and home-currency amounts with that day's BNR
+        rate (422 `fx_rate_unavailable` if missing). With `repeat`, also creates a subscription
+        starting on `occurredOn` and links this transaction as its first occurrence.
+        Idempotent when the same `id` is sent again.
+      tags: [transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransactionRequest"
+      responses:
+        "201":
+          description: The new transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+  /transactions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: getTransaction
+      summary: One transaction
+      tags: [transactions]
+      responses:
+        "200":
+          description: The transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: updateTransaction
+      summary: Replace a transaction's editable fields
+      description: Recomputes the frozen amounts when amount, currency, account or date change. 409 `version_conflict`.
+      tags: [transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTransactionRequest"
+      responses:
+        "200":
+          description: The updated transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteTransaction
+      summary: Delete a transaction (soft; restore it with Undo)
+      tags: [transactions]
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Error"
+  /transactions/{id}/restore:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      operationId: restoreTransaction
+      summary: Undo a delete
+      tags: [transactions]
+      responses:
+        "200":
+          description: The restored transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+  /transactions/{id}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      operationId: confirmTransaction
+      summary: Confirm a pending subscription charge (optionally with the real amount)
+      description: 409 `not_pending` when the transaction isn't pending.
+      tags: [transactions]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmTransactionRequest"
+      responses:
+        "200":
+          description: The transaction, now posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+  /transactions/{id}/skip:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      operationId: skipTransaction
+      summary: Mark a pending subscription charge as not happened this time
+      description: 409 `not_pending` when the transaction isn't pending.
+      tags: [transactions]
+      responses:
+        "200":
+          description: The transaction, now skipped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- budgets
+  /budgets:
+    get:
+      operationId: getBudgets
+      summary: Limits, spending and pace for every expense category in a budget month
+      tags: [budgets]
+      parameters:
+        - $ref: "#/components/parameters/MonthQuery"
+      responses:
+        "200":
+          description: The budget month
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetMonth"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: setBudgets
+      summary: Set monthly limits for several categories at once
+      description: |
+        `ongoing`: the limit applies from `month` on, until a later ongoing limit replaces it
+        (`amountMinor: null` removes the limit from that month on). `single_month`: only that
+        month (`amountMinor: null` removes the override). 422 for income categories.
+      tags: [budgets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetBudgetsRequest"
+      responses:
+        "200":
+          description: The budget month after the change
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetMonth"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- screens
+  /home:
+    get:
+      operationId: getHome
+      summary: Everything the Home screen shows for a budget month
+      tags: [screens]
+      parameters:
+        - $ref: "#/components/parameters/MonthQuery"
+      responses:
+        "200":
+          description: The Home screen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Home"
+        default:
+          $ref: "#/components/responses/Error"
+  /months:
+    get:
+      operationId: listMonths
+      summary: Budget months that have data, newest first (for the month picker)
+      tags: [screens]
+      responses:
+        "200":
+          description: The months
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthList"
+        default:
+          $ref: "#/components/responses/Error"
+  /insights:
+    get:
+      operationId: getInsights
+      summary: Spending trends for a period
+      tags: [screens]
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InsightsPeriod"
+        - name: categoryId
+          in: query
+          description: Limit everything to one expense category (category detail screen).
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insights"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- subscriptions
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: Repeating payments and income, with totals and what's due soon
+      tags: [subscriptions]
+      responses:
+        "200":
+          description: The subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionList"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createSubscription
+      summary: Add a subscription
+      description: Idempotent when the same `id` is sent again.
+      tags: [subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionRequest"
+      responses:
+        "201":
+          description: The new subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Error"
+  /subscriptions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    put:
+      operationId: updateSubscription
+      summary: Replace a subscription's editable fields (isActive false pauses it)
+      description: 409 `version_conflict`. Past transactions are never changed.
+      tags: [subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriptionRequest"
+      responses:
+        "200":
+          description: The updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteSubscription
+      summary: Delete a subscription (its past transactions stay)
+      tags: [subscriptions]
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MonthQuery:
+      name: month
+      in: query
+      description: Budget month as YYYY-MM. Defaults to the household's current budget month.
+      required: false
+      schema:
+        $ref: "#/components/schemas/Month"
+
+  responses:
+    Error:
+      description: Something went wrong; `code` says what
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
+    # ------------------------------------------------------------ shared
     HealthResponse:
       type: object
       required: [status, database]
@@ -40,3 +1009,1343 @@ components:
         database:
           type: string
           enum: [up, down]
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          description: |
+            Stable machine-readable reason. Clients branch on these, never on `message`.
+            Requests: bad_request, invalid_parameter, validation_failed (see `fields`), rate_limited.
+            Auth: unauthorized, token_expired (refresh and retry), session_expired (sign in again),
+            invalid_credentials, invalid_token (email link), invalid_google_token,
+            google_email_unverified, google_not_configured, identity_conflict, already_verified.
+            Data: not_found, version_conflict, id_taken, email_taken, username_taken, name_taken,
+            budget_exists, duplicate_occurrence, invalid_reference, not_pending,
+            account_currency_locked, home_currency_locked, fx_rate_unavailable.
+            Server: internal, not_implemented.
+          type: string
+        message:
+          description: A sentence a person can read, in the app's voice.
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          description: The request field (camelCase), e.g. "password".
+          type: string
+        code:
+          description: |
+            required, invalid, invalid_format, too_short, too_long, too_small, too_large, out_of_range, taken,
+            reserved, missing_uppercase, missing_lowercase, missing_digit, missing_symbol,
+            same_as_username, not_found, archived, kind_mismatch, expense_only, not_expense,
+            unsupported, before_start.
+          type: string
+        message:
+          type: string
+    DeleteResult:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [deleted, archived]
+    CurrencyCode:
+      type: string
+      pattern: "^[A-Z]{3}$"
+      example: RON
+    Month:
+      description: A budget month, YYYY-MM.
+      type: string
+      pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      example: "2026-11"
+    EntryKind:
+      type: string
+      enum: [expense, income]
+    TransactionStatus:
+      type: string
+      enum: [posted, pending, skipped]
+    AccountType:
+      type: string
+      enum: [cash, bank, credit_card, savings, other]
+    CategoryColor:
+      description: A hue from the design's category palette; clients map it to their color tokens.
+      type: string
+      enum: [mint, orange, indigo, cyan, purple, pink, brown, gray, teal, yellow, green]
+    Frequency:
+      type: string
+      enum: [weekly, monthly, yearly]
+    Platform:
+      type: string
+      enum: [web, ios]
+    AuthProvider:
+      type: string
+      enum: [google, apple]
+
+    # ------------------------------------------------------------ auth
+    RegisterRequest:
+      type: object
+      required: [email, username, password, platform]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          description: 3–30 characters of a–z, 0–9, ".", "_" and "-". Compared case-insensitively.
+          minLength: 3
+          maxLength: 30
+        password:
+          type: string
+          description: 8–128 characters with an uppercase letter, a lowercase letter, a digit and a symbol.
+          minLength: 8
+          maxLength: 128
+        platform:
+          $ref: "#/components/schemas/Platform"
+        deviceName:
+          type: string
+          maxLength: 100
+    LoginRequest:
+      type: object
+      required: [identifier, password, platform]
+      properties:
+        identifier:
+          type: string
+          description: Email address or username.
+          maxLength: 254
+        password:
+          type: string
+          maxLength: 128
+        platform:
+          $ref: "#/components/schemas/Platform"
+        deviceName:
+          type: string
+          maxLength: 100
+    GoogleSignInRequest:
+      type: object
+      required: [idToken, platform]
+      properties:
+        idToken:
+          type: string
+        platform:
+          $ref: "#/components/schemas/Platform"
+        deviceName:
+          type: string
+          maxLength: 100
+    RefreshRequest:
+      type: object
+      required: [platform]
+      properties:
+        platform:
+          $ref: "#/components/schemas/Platform"
+        refreshToken:
+          description: iOS only. The web app's token is in its cookie.
+          type: string
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          description: iOS only. The web app's token is in its cookie.
+          type: string
+    TokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    ResetPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+    AuthResponse:
+      type: object
+      required: [accessToken, accessTokenExpiresAt, user, isNewUser]
+      properties:
+        accessToken:
+          description: JWT for the Authorization header (Bearer). Valid for 15 minutes.
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+        refreshToken:
+          description: iOS only (keep it in the Keychain). Never sent to the web app, which gets an HttpOnly cookie.
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        isNewUser:
+          type: boolean
+    UsernameAvailability:
+      type: object
+      required: [username, available]
+      properties:
+        username:
+          description: The username as it would be stored (lowercased, trimmed).
+          type: string
+        available:
+          type: boolean
+        reason:
+          type: string
+          enum: [taken, invalid, reserved]
+
+    # ------------------------------------------------------------ me
+    User:
+      type: object
+      required: [id, email, emailVerified, username, displayName, region, hasPassword, linkedProviders, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        username:
+          type: string
+        displayName:
+          type: string
+          nullable: true
+        region:
+          description: ISO 3166 region that decides number and currency formatting ("RO" → 1.234,29 lei).
+          type: string
+          example: RO
+        hasPassword:
+          type: boolean
+        linkedProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthProvider"
+        createdAt:
+          type: string
+          format: date-time
+    UpdateMeRequest:
+      type: object
+      properties:
+        displayName:
+          description: Empty string clears it.
+          type: string
+          maxLength: 80
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
+    ChangePasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        currentPassword:
+          type: string
+          maxLength: 128
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    # ------------------------------------------------------------ household
+    Household:
+      type: object
+      required: [id, name, homeCurrency, timezone, monthStartDay, canChangeHomeCurrency, today, currentMonth]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        timezone:
+          description: IANA time zone, e.g. Europe/Bucharest.
+          type: string
+        monthStartDay:
+          description: 1–28. With 10, the "November" budget runs 10 Nov – 9 Dec.
+          type: integer
+          minimum: 1
+          maximum: 28
+        canChangeHomeCurrency:
+          type: boolean
+        today:
+          description: Today's date in the household's time zone.
+          type: string
+          format: date
+        currentMonth:
+          $ref: "#/components/schemas/Month"
+    UpdateHouseholdRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        timezone:
+          type: string
+        monthStartDay:
+          type: integer
+          minimum: 1
+          maximum: 28
+
+    # ------------------------------------------------------------ reference
+    Currency:
+      type: object
+      required: [code, name, minorUnits]
+      properties:
+        code:
+          $ref: "#/components/schemas/CurrencyCode"
+        name:
+          type: string
+        minorUnits:
+          type: integer
+    FxQuote:
+      type: object
+      required: [from, to, "on", rate, rateDate]
+      properties:
+        from:
+          $ref: "#/components/schemas/CurrencyCode"
+        to:
+          $ref: "#/components/schemas/CurrencyCode"
+        "on":
+          type: string
+          format: date
+        rate:
+          description: Units of `to` per one unit of `from`, as a decimal string.
+          type: string
+          example: "4.9800000000"
+        rateDate:
+          description: The BNR day the rate comes from; null when from = to.
+          type: string
+          format: date
+          nullable: true
+        amountMinor:
+          description: The requested amount converted to `to`, in its minor units.
+          type: integer
+          format: int64
+
+    # ------------------------------------------------------------ accounts & categories
+    AccountRef:
+      type: object
+      required: [id, name, type, currency]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+    Account:
+      type: object
+      required: [id, name, type, currency, openingBalanceMinor, openingBalanceOn, includeInTotal, sortOrder,
+                 archived, balanceMinor, balanceHomeMinor, rowVersion, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        openingBalanceMinor:
+          description: Balance on openingBalanceOn (may be negative for a credit card).
+          type: integer
+          format: int64
+        openingBalanceOn:
+          type: string
+          format: date
+        includeInTotal:
+          type: boolean
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        balanceMinor:
+          description: Current balance in the account's currency (may be negative).
+          type: integer
+          format: int64
+        balanceHomeMinor:
+          description: ≈ the balance in the home currency at today's rate; null if no rate.
+          type: integer
+          format: int64
+          nullable: true
+        rowVersion:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AccountList:
+      type: object
+      required: [items, homeCurrency, totalHomeMinor, totalIsApproximate]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Account"
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        totalHomeMinor:
+          description: Sum of non-archived accounts with includeInTotal, in the home currency.
+          type: integer
+          format: int64
+        totalIsApproximate:
+          description: True when the total includes converted balances (show "≈").
+          type: boolean
+    CreateAccountRequest:
+      type: object
+      required: [name, type, currency]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        openingBalanceMinor:
+          type: integer
+          format: int64
+          minimum: -1000000000000000
+          maximum: 1000000000000000
+          default: 0
+        openingBalanceOn:
+          description: Defaults to the household's today.
+          type: string
+          format: date
+        includeInTotal:
+          type: boolean
+          default: true
+        sortOrder:
+          type: integer
+    UpdateAccountRequest:
+      type: object
+      required: [name, type, currency, openingBalanceMinor, openingBalanceOn, includeInTotal, sortOrder, archived, rowVersion]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        openingBalanceMinor:
+          type: integer
+          format: int64
+          minimum: -1000000000000000
+          maximum: 1000000000000000
+        openingBalanceOn:
+          type: string
+          format: date
+        includeInTotal:
+          type: boolean
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        rowVersion:
+          type: integer
+          format: int64
+    CategoryRef:
+      type: object
+      required: [id, kind, name, color, icon, isFixed]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        name:
+          type: string
+        color:
+          $ref: "#/components/schemas/CategoryColor"
+        icon:
+          description: Phosphor icon name in kebab case, e.g. shopping-cart.
+          type: string
+        isFixed:
+          type: boolean
+    Category:
+      type: object
+      required: [id, kind, name, color, icon, isFixed, sortOrder, systemKey, archived, rowVersion]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        name:
+          type: string
+        color:
+          $ref: "#/components/schemas/CategoryColor"
+        icon:
+          type: string
+        isFixed:
+          type: boolean
+        sortOrder:
+          type: integer
+        systemKey:
+          description: Set on the 13 defaults (groceries, eating_out, …), null on categories people create.
+          type: string
+          nullable: true
+        archived:
+          type: boolean
+        rowVersion:
+          type: integer
+          format: int64
+    CreateCategoryRequest:
+      type: object
+      required: [kind, name, color, icon]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        color:
+          $ref: "#/components/schemas/CategoryColor"
+        icon:
+          type: string
+          pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+        isFixed:
+          type: boolean
+          default: false
+        sortOrder:
+          type: integer
+    UpdateCategoryRequest:
+      type: object
+      required: [name, color, icon, isFixed, sortOrder, archived, rowVersion]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        color:
+          $ref: "#/components/schemas/CategoryColor"
+        icon:
+          type: string
+          pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+        isFixed:
+          type: boolean
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        rowVersion:
+          type: integer
+          format: int64
+
+    # ------------------------------------------------------------ transactions
+    Transaction:
+      type: object
+      required: [id, kind, status, title, note, occurredOn, occurredAt, category, account, amountMinor, currency,
+                 accountAmountMinor, accountCurrency, homeAmountMinor, homeCurrency, fxRate, fxRateDate,
+                 recurringId, recurringOccurrenceOn, rowVersion, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        status:
+          $ref: "#/components/schemas/TransactionStatus"
+        title:
+          description: Merchant or short description ("Lidl").
+          type: string
+        note:
+          type: string
+          nullable: true
+        occurredOn:
+          description: Calendar day in the household's time zone.
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+          nullable: true
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        account:
+          $ref: "#/components/schemas/AccountRef"
+        amountMinor:
+          description: As entered, in `currency`.
+          type: integer
+          format: int64
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        accountAmountMinor:
+          type: integer
+          format: int64
+        accountCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        homeAmountMinor:
+          description: Frozen at entry; what budgets and totals add up.
+          type: integer
+          format: int64
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        fxRate:
+          description: homeCurrency per one unit of currency ("1" when they match).
+          type: string
+        fxRateDate:
+          type: string
+          format: date
+          nullable: true
+        recurringId:
+          description: The subscription that created or matches this transaction.
+          type: string
+          format: uuid
+          nullable: true
+        recurringOccurrenceOn:
+          type: string
+          format: date
+          nullable: true
+        rowVersion:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DayTotal:
+      type: object
+      required: [date, expenseHomeMinor, incomeHomeMinor]
+      properties:
+        date:
+          type: string
+          format: date
+        expenseHomeMinor:
+          description: Posted expenses of the day matching the filters, in the home currency.
+          type: integer
+          format: int64
+        incomeHomeMinor:
+          type: integer
+          format: int64
+    TransactionPage:
+      type: object
+      required: [items, dayTotals, nextCursor, homeCurrency]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        dayTotals:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayTotal"
+        nextCursor:
+          description: Pass as `cursor` to get the next page; null on the last page.
+          type: string
+          nullable: true
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+    RepeatRule:
+      type: object
+      required: [frequency]
+      properties:
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        intervalCount:
+          type: integer
+          minimum: 1
+          maximum: 52
+          default: 1
+    CreateTransactionRequest:
+      type: object
+      required: [kind, occurredOn, categoryId, accountId, amountMinor, currency]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        title:
+          description: Merchant or note. Defaults to the category's name when empty.
+          type: string
+          maxLength: 80
+        note:
+          type: string
+          maxLength: 500
+        occurredOn:
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+        categoryId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        repeat:
+          $ref: "#/components/schemas/RepeatRule"
+    UpdateTransactionRequest:
+      type: object
+      required: [kind, title, occurredOn, categoryId, accountId, amountMinor, currency, rowVersion]
+      properties:
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        note:
+          type: string
+          maxLength: 500
+        occurredOn:
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+        categoryId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        rowVersion:
+          type: integer
+          format: int64
+    ConfirmTransactionRequest:
+      type: object
+      properties:
+        amountMinor:
+          description: The amount actually charged, if it differs (same currency).
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+
+    # ------------------------------------------------------------ budgets & screens
+    BudgetPeriod:
+      type: object
+      required: [month, startsOn, endsBefore, daysInPeriod, state, today, elapsed, daysLeft]
+      properties:
+        month:
+          $ref: "#/components/schemas/Month"
+        startsOn:
+          type: string
+          format: date
+        endsBefore:
+          description: First day after the period.
+          type: string
+          format: date
+        daysInPeriod:
+          type: integer
+        state:
+          type: string
+          enum: [past, current, future]
+        today:
+          description: The household's today.
+          type: string
+          format: date
+        elapsed:
+          description: (today − start + 1) / daysInPeriod for the current month; 1 for past, 0 for future months.
+          type: number
+          format: double
+        daysLeft:
+          description: Days left including today (0 for past months).
+          type: integer
+    BudgetStatus:
+      type: string
+      enum: [over, ahead, on_track]
+    BudgetLine:
+      type: object
+      required: [category, limitMinor, spentMinor, leftMinor, scope, status, usedRatio]
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        limitMinor:
+          description: The month's limit in the home currency; null when the category has no budget.
+          type: integer
+          format: int64
+          nullable: true
+        spentMinor:
+          description: Posted expenses in the period, home currency.
+          type: integer
+          format: int64
+        leftMinor:
+          description: limit − spent (negative when over); null without a limit.
+          type: integer
+          format: int64
+          nullable: true
+        scope:
+          description: Which kind of budget row sets the limit this month; null without one.
+          type: string
+          enum: [ongoing, single_month]
+          nullable: true
+        status:
+          $ref: "#/components/schemas/BudgetStatus"
+        usedRatio:
+          description: spent / limit (may exceed 1); null without a limit.
+          type: number
+          format: double
+          nullable: true
+    BudgetTotals:
+      type: object
+      required: [budgetMinor, spentMinor, leftMinor, fixedLimitMinor, flexLimitMinor, flexSpentMinor,
+                 perDayMinor, underPaceMinor, paceMarker, status]
+      properties:
+        budgetMinor:
+          description: Sum of all limits.
+          type: integer
+          format: int64
+        spentMinor:
+          description: Spent in budgeted categories.
+          type: integer
+          format: int64
+        leftMinor:
+          type: integer
+          format: int64
+        fixedLimitMinor:
+          type: integer
+          format: int64
+        flexLimitMinor:
+          type: integer
+          format: int64
+        flexSpentMinor:
+          type: integer
+          format: int64
+        perDayMinor:
+          description: (flex limits − flex spent) / days left including today, rounded to whole major units; null outside the current month.
+          type: integer
+          format: int64
+          nullable: true
+        underPaceMinor:
+          description: flex limits × elapsed − flex spent (negative = ahead of pace); null outside the current month.
+          type: integer
+          format: int64
+          nullable: true
+        paceMarker:
+          description: Where the "Today" tick sits on the total bar, 0–1; null outside the current month.
+          type: number
+          format: double
+          nullable: true
+        status:
+          # over when the month total is over; ahead when underPaceMinor < 0; otherwise on_track.
+          $ref: "#/components/schemas/BudgetStatus"
+    PaceSegment:
+      type: object
+      required: [category, amountMinor]
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        amountMinor:
+          description: min(spent, limit) for the category; segment width = amount / budgetMinor.
+          type: integer
+          format: int64
+    BudgetMonth:
+      type: object
+      required: [period, homeCurrency, hasBudget, totals, segments, flexible, fixed, unbudgeted]
+      properties:
+        period:
+          $ref: "#/components/schemas/BudgetPeriod"
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        hasBudget:
+          description: False when no expense category has a limit this month.
+          type: boolean
+        totals:
+          $ref: "#/components/schemas/BudgetTotals"
+        segments:
+          description: Pace bar segments, fixed categories first, then flexible in sort order.
+          type: array
+          items:
+            $ref: "#/components/schemas/PaceSegment"
+        flexible:
+          description: Over first, then by usedRatio, highest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetLine"
+        fixed:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetLine"
+        unbudgeted:
+          description: Active expense categories without a limit this month (with what was spent).
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetLine"
+    SetBudgetsRequest:
+      type: object
+      required: [month, scope, items]
+      properties:
+        month:
+          $ref: "#/components/schemas/Month"
+        scope:
+          type: string
+          enum: [ongoing, single_month]
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BudgetLimitInput"
+    BudgetLimitInput:
+      type: object
+      required: [categoryId, amountMinor]
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        amountMinor:
+          description: Limit in the home currency's minor units; null removes it.
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          nullable: true
+    Home:
+      type: object
+      required: [budget, attention, pending, upcoming, recent, pendingCount, dueSoonCount]
+      properties:
+        budget:
+          $ref: "#/components/schemas/BudgetMonth"
+        attention:
+          description: |
+            Every budgeted category, ranked by attention: usedRatio, highest first (so over-budget
+            ones lead), ties in category sort order. Compact Home shows the first 4 non-fixed ones;
+            desktop shows all of them (matches the design renders).
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetLine"
+        pending:
+          description: Subscription charges waiting for confirmation, oldest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        upcoming:
+          description: The next 6 active subscription charges (expense and income), soonest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        recent:
+          description: The 6 most recent posted transactions.
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        pendingCount:
+          type: integer
+        dueSoonCount:
+          description: Active subscriptions due within the next 7 days.
+          type: integer
+    MonthSummary:
+      type: object
+      required: [month, spentMinor, budgetMinor]
+      properties:
+        month:
+          $ref: "#/components/schemas/Month"
+        spentMinor:
+          description: All posted expenses in the period, home currency.
+          type: integer
+          format: int64
+        budgetMinor:
+          type: integer
+          format: int64
+          nullable: true
+    MonthList:
+      type: object
+      required: [current, homeCurrency, items]
+      properties:
+        current:
+          $ref: "#/components/schemas/Month"
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        items:
+          description: From the next month back to the first month with data, newest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthSummary"
+
+    # ------------------------------------------------------------ insights
+    InsightsPeriod:
+      description: week = 7 daily bars (Mon–Sun); month = daily bars of the budget month; six_months / year = monthly bars.
+      type: string
+      enum: [week, month, six_months, year]
+      default: six_months
+    InsightsBar:
+      type: object
+      required: [startsOn, endsBefore, spentMinor, isCurrent, projectedMinor]
+      properties:
+        startsOn:
+          type: string
+          format: date
+        endsBefore:
+          type: string
+          format: date
+        spentMinor:
+          type: integer
+          format: int64
+        isCurrent:
+          description: The bar containing today (drawn in tint).
+          type: boolean
+        projectedMinor:
+          description: Projection for the current month bar (dashed outline); null otherwise.
+          type: integer
+          format: int64
+          nullable: true
+    InsightsHeadline:
+      type: object
+      required: [currentMinor, previousMinor, changeRatio, comparedTo]
+      properties:
+        currentMinor:
+          description: Spent so far in the current unit (week, or budget month).
+          type: integer
+          format: int64
+        previousMinor:
+          description: Spent in the previous unit up to the same point; null when there's no data.
+          type: integer
+          format: int64
+          nullable: true
+        changeRatio:
+          description: (current − previous) / previous; null without previous data.
+          type: number
+          format: double
+          nullable: true
+        comparedTo:
+          description: First day of the unit compared against (e.g. 2026-10-01 → "October").
+          type: string
+          format: date
+    CategorySpend:
+      type: object
+      required: [category, spentMinor, share]
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        spentMinor:
+          type: integer
+          format: int64
+        share:
+          description: Share of all spending in the range, 0–1.
+          type: number
+          format: double
+    BiggestChange:
+      type: object
+      required: [category, currentMinor, previousMinor, changeRatio, comparedTo, spark]
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        currentMinor:
+          type: integer
+          format: int64
+        previousMinor:
+          type: integer
+          format: int64
+        changeRatio:
+          type: number
+          format: double
+        comparedTo:
+          type: string
+          format: date
+        spark:
+          description: The category's spending per bar of the range (last one is the current unit).
+          type: array
+          items:
+            type: integer
+            format: int64
+    BiggestDay:
+      type: object
+      required: [date, spentMinor, topCategories]
+      properties:
+        date:
+          type: string
+          format: date
+        spentMinor:
+          type: integer
+          format: int64
+        topCategories:
+          description: One category when it was ≥ 50% of the day, otherwise the top two.
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryRef"
+    SubscriptionsHighlight:
+      type: object
+      required: [perMonthMinor, activeCount, isApproximate]
+      properties:
+        perMonthMinor:
+          type: integer
+          format: int64
+        activeCount:
+          type: integer
+        isApproximate:
+          type: boolean
+        next:
+          $ref: "#/components/schemas/Subscription"
+    Insights:
+      type: object
+      # biggestChange, biggestDay and subscriptions.next are left out when there's nothing to show.
+      required: [period, homeCurrency, startsOn, endsBefore, bars, averageMinor, headline, byCategory, subscriptions]
+      properties:
+        period:
+          $ref: "#/components/schemas/InsightsPeriod"
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        startsOn:
+          type: string
+          format: date
+        endsBefore:
+          type: string
+          format: date
+        bars:
+          type: array
+          items:
+            $ref: "#/components/schemas/InsightsBar"
+        averageMinor:
+          description: Average of completed bars with data (needs at least 2); null otherwise.
+          type: integer
+          format: int64
+          nullable: true
+        headline:
+          $ref: "#/components/schemas/InsightsHeadline"
+        byCategory:
+          description: Spending per category over the whole range, largest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/CategorySpend"
+        biggestChange:
+          $ref: "#/components/schemas/BiggestChange"
+        biggestDay:
+          $ref: "#/components/schemas/BiggestDay"
+        subscriptions:
+          $ref: "#/components/schemas/SubscriptionsHighlight"
+
+    # ------------------------------------------------------------ subscriptions
+    Subscription:
+      type: object
+      required: [id, kind, title, note, amountMinor, currency, amountHomeMinor, monthlyHomeMinor, account, category,
+                 frequency, intervalCount, startsOn, nextDueOn, endsOn, daysUntilDue, isActive, rowVersion]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        title:
+          type: string
+        note:
+          type: string
+          nullable: true
+        amountMinor:
+          type: integer
+          format: int64
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        amountHomeMinor:
+          description: ≈ amount in the home currency at today's rate (same as amountMinor when no conversion); null if no rate.
+          type: integer
+          format: int64
+          nullable: true
+        monthlyHomeMinor:
+          description: ≈ cost per month in the home currency (weekly × 52/12, yearly ÷ 12, ÷ intervalCount); null if no rate.
+          type: integer
+          format: int64
+          nullable: true
+        account:
+          $ref: "#/components/schemas/AccountRef"
+        category:
+          $ref: "#/components/schemas/CategoryRef"
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        intervalCount:
+          type: integer
+        startsOn:
+          type: string
+          format: date
+        nextDueOn:
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+          nullable: true
+        daysUntilDue:
+          description: nextDueOn − the household's today (0 = today).
+          type: integer
+        isActive:
+          type: boolean
+        rowVersion:
+          type: integer
+          format: int64
+    SubscriptionList:
+      type: object
+      required: [homeCurrency, perMonthMinor, perYearMinor, activeCount, isApproximate, shareOfBudget,
+                 nextSevenDays, nextSevenDaysHomeMinor, later, paused, pendingCount]
+      properties:
+        homeCurrency:
+          $ref: "#/components/schemas/CurrencyCode"
+        perMonthMinor:
+          description: ≈ monthly cost of active expense subscriptions, home currency.
+          type: integer
+          format: int64
+        perYearMinor:
+          type: integer
+          format: int64
+        activeCount:
+          description: Active expense subscriptions.
+          type: integer
+        isApproximate:
+          description: True when the totals include converted amounts (show "≈").
+          type: boolean
+        shareOfBudget:
+          description: perMonth / this month's total budget, 0–1; null without a budget.
+          type: number
+          format: double
+          nullable: true
+        nextSevenDays:
+          description: Active subscriptions due within 7 days, soonest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        nextSevenDaysHomeMinor:
+          description: ≈ total of the expense ones due within 7 days, home currency.
+          type: integer
+          format: int64
+        later:
+          description: The other active subscriptions, soonest first.
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        paused:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        pendingCount:
+          description: Charges waiting for confirmation.
+          type: integer
+    CreateSubscriptionRequest:
+      type: object
+      required: [kind, title, amountMinor, currency, accountId, categoryId, frequency, startsOn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        note:
+          type: string
+          maxLength: 500
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        accountId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        intervalCount:
+          type: integer
+          minimum: 1
+          maximum: 52
+          default: 1
+        startsOn:
+          description: First charge. Past dates are fine; the job doesn't backfill before today.
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+    UpdateSubscriptionRequest:
+      type: object
+      required: [title, amountMinor, currency, accountId, categoryId, frequency, intervalCount, startsOn, isActive, rowVersion]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        note:
+          type: string
+          maxLength: 500
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        accountId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        intervalCount:
+          type: integer
+          minimum: 1
+          maximum: 52
+        startsOn:
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+          nullable: true
+        isActive:
+          type: boolean
+        rowVersion:
+          type: integer
+          format: int64

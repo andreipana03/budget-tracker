@@ -17,5 +17,12 @@ public import struct Foundation.Data
 public import struct Foundation.Date
 extension Components {
     /// Types generated from the `#/components/parameters` section of the OpenAPI document.
-    public enum Parameters {}
+    public enum Parameters {
+        /// - Remark: Generated from `#/components/parameters/Id`.
+        public typealias Id = Swift.String
+        /// Budget month as YYYY-MM. Defaults to the household's current budget month.
+        ///
+        /// - Remark: Generated from `#/components/parameters/MonthQuery`.
+        public typealias MonthQuery = Components.Schemas.Month
+    }
 }

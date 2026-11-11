@@ -12,12 +12,16 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // household time zones work even without the OS zone database
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andreipana03/budget-tracker/backend/internal/api"
+	"github.com/andreipana03/budget-tracker/backend/internal/auth"
+	"github.com/andreipana03/budget-tracker/backend/internal/clock"
 	"github.com/andreipana03/budget-tracker/backend/internal/config"
-	"github.com/andreipana03/budget-tracker/backend/internal/store"
+	"github.com/andreipana03/budget-tracker/backend/internal/jobs"
+	"github.com/andreipana03/budget-tracker/backend/internal/mail"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -47,11 +51,38 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	server := api.NewServer(store.New(pool), logger)
+	deps := api.Deps{Pool: pool, Logger: logger, Clock: clock.Real{}, Config: cfg, Mailer: newMailer(cfg, logger)}
+	if len(cfg.GoogleClientIDs) > 0 {
+		// The key set fetches Google's signing keys with this context, so it lives as
+		// long as the process (not the signal context, which ends at shutdown).
+		deps.Google = auth.NewGoogleVerifier(context.Background(), cfg.GoogleClientIDs)
+	} else {
+		logger.Info("Google sign-in disabled: GOOGLE_CLIENT_IDS is empty")
+	}
+	server := api.NewServer(deps)
 	httpServer := &http.Server{
-		Addr:              net.JoinHostPort("", cfg.Port),
-		Handler:           api.NewRouter(server, logger, cfg.CORSAllowedOrigins),
+		Addr: net.JoinHostPort("", cfg.Port),
+		Handler: api.NewRouter(server, logger, api.RouterOptions{
+			AllowedOrigins: cfg.CORSAllowedOrigins,
+			Authenticator:  server.Authenticator(),
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
+	// Background jobs (BNR rates, subscriptions, cleanup) stop with ctx; shutdown
+	// waits for a run in progress.
+	if cfg.JobsEnabled {
+		runner := jobs.New(jobs.Options{Pool: pool, Logger: logger, Clock: clock.Real{}, BNRBaseURL: cfg.BNRBaseURL})
+		runner.Start(ctx)
+		defer func() {
+			stop() // also when the server failed to start
+			runner.Wait()
+		}()
+	} else {
+		logger.Info("background jobs disabled: JOBS_ENABLED=false")
 	}
 
 	serveErr := make(chan error, 1)
@@ -73,4 +104,12 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("shut down server: %w", err)
 	}
 	return nil
+}
+
+// newMailer picks the email sender for MAIL_DRIVER.
+func newMailer(cfg config.Config, logger *slog.Logger) mail.Sender {
+	if cfg.MailDriver == "log" {
+		return mail.Log{Logger: logger}
+	}
+	return mail.SMTP{Host: cfg.SMTPHost, Port: cfg.SMTPPort, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword, From: cfg.MailFrom}
 }

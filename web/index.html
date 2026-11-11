@@ -2,8 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Mobile-native baseline (design § 10): edge-to-edge with safe areas, the keyboard
+         resizes content, zoom is never disabled. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Budget" />
+    <meta name="description" content="How much can I still spend this month — and am I spending it too fast?" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" href="/app-icon-180.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Budget Tracker</title>
   </head>
   <body>

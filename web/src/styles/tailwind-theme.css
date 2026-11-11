@@ -1,0 +1,230 @@
+/* ==========================================================================
+   Budget Tracker — Tailwind CSS v4 theme
+   src/index.css:
+     @import "tailwindcss";
+     @import "./styles/tokens.css";          ← copy of DesignAssets/tokens/tokens.css
+     @import "./styles/tailwind-theme.css";  ← this file
+
+   `@theme inline` makes every utility read the live CSS variable, so
+   bg-surface, text-label-2, etc. switch with light/dark, Increase Contrast
+   and width automatically. NEVER use Tailwind's `dark:` variant for color.
+   ========================================================================== */
+
+@theme inline {
+  /* Wipe Tailwind's defaults so only design-system values exist.
+     (No bg-blue-500, no text-gray-600, no rounded-2xl guesses.) */
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+  --breakpoint-*: initial;
+
+  /* Breakpoints: compact < 768 ≤ medium < 1024 ≤ regular */
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1440px;
+
+  /* 4px grid in px: p-4 = 16px, gap-3 = 12px (root is 17px, so rem would drift) */
+  --spacing: 4px;
+
+  /* Colors */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sheet: var(--sheet-bg);
+  --color-sheet-surface: var(--sheet-surface);
+  --color-label: var(--label);
+  --color-label-2: var(--label-2);
+  --color-label-3: var(--label-3);
+  --color-label-4: var(--label-4);
+  --color-placeholder: var(--placeholder);
+  --color-separator: var(--separator);
+  --color-separator-opaque: var(--separator-opaque);
+  --color-fill-1: var(--fill-1);
+  --color-fill-2: var(--fill-2);
+  --color-fill-3: var(--fill-3);
+  --color-fill-4: var(--fill-4);
+  --color-control-selected: var(--control-selected);
+  --color-tint: var(--tint);
+  --color-tint-text: var(--tint-text);
+  --color-tint-soft: var(--tint-soft);
+  --color-on-tint: var(--on-tint);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-negative-fill: var(--negative-fill);
+  --color-chart-neutral: var(--chart-neutral);
+  --color-chart-track: var(--chart-track);
+  --color-marker: var(--marker);
+  --color-dim: var(--dim);
+  --color-glass-selected: var(--glass-selected);
+  --color-white: #FFFFFF;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-cat-groceries: var(--cat-groceries);
+  --color-cat-eating: var(--cat-eating);
+  --color-cat-housing: var(--cat-housing);
+  --color-cat-transport: var(--cat-transport);
+  --color-cat-fun: var(--cat-fun);
+  --color-cat-shopping: var(--cat-shopping);
+  --color-cat-education: var(--cat-education);
+  --color-cat-other: var(--cat-other);
+  --color-cat-income: var(--cat-income);
+  --color-tile-groceries: var(--cat-groceries-tile);
+  --color-tile-eating: var(--cat-eating-tile);
+  --color-tile-housing: var(--cat-housing-tile);
+  --color-tile-transport: var(--cat-transport-tile);
+  --color-tile-fun: var(--cat-fun-tile);
+  --color-tile-shopping: var(--cat-shopping-tile);
+  --color-tile-education: var(--cat-education-tile);
+  --color-tile-other: var(--cat-other-tile);
+  --color-tile-income: var(--cat-income-tile);
+
+  /* Fonts */
+  --font-sans: var(--type-sans);
+  --font-rounded: var(--type-rounded);
+  --font-mono: var(--type-mono);
+
+  /* Text styles — use these, never raw text-[15px] */
+  --text-display: var(--fs-display);
+  --text-display--line-height: var(--lh-display);
+  --text-display--letter-spacing: var(--ls-display);
+  --text-display--font-weight: 700;
+  --text-large-title: var(--fs-large-title);
+  --text-large-title--line-height: var(--lh-large-title);
+  --text-large-title--letter-spacing: var(--ls-large-title);
+  --text-large-title--font-weight: 700;
+  --text-title-1: var(--fs-title-1);
+  --text-title-1--line-height: var(--lh-title-1);
+  --text-title-1--letter-spacing: var(--ls-title-1);
+  --text-title-1--font-weight: 700;
+  --text-title-2: var(--fs-title-2);
+  --text-title-2--line-height: var(--lh-title-2);
+  --text-title-2--letter-spacing: var(--ls-title-2);
+  --text-title-2--font-weight: 700;
+  --text-title-3: var(--fs-title-3);
+  --text-title-3--line-height: var(--lh-title-3);
+  --text-title-3--letter-spacing: var(--ls-title-3);
+  --text-title-3--font-weight: 600;
+  --text-headline: var(--fs-headline);
+  --text-headline--line-height: var(--lh-headline);
+  --text-headline--letter-spacing: var(--ls-headline);
+  --text-headline--font-weight: 600;
+  --text-body: var(--fs-body);
+  --text-body--line-height: var(--lh-body);
+  --text-body--letter-spacing: var(--ls-body);
+  --text-callout: var(--fs-callout);
+  --text-callout--line-height: var(--lh-callout);
+  --text-callout--letter-spacing: var(--ls-callout);
+  --text-subhead: var(--fs-subhead);
+  --text-subhead--line-height: var(--lh-subhead);
+  --text-subhead--letter-spacing: var(--ls-subhead);
+  --text-footnote: var(--fs-footnote);
+  --text-footnote--line-height: var(--lh-footnote);
+  --text-footnote--letter-spacing: var(--ls-footnote);
+  --text-caption-1: var(--fs-caption-1);
+  --text-caption-1--line-height: var(--lh-caption-1);
+  --text-caption-1--letter-spacing: var(--ls-caption-1);
+  --text-caption-2: var(--fs-caption-2);
+  --text-caption-2--line-height: var(--lh-caption-2);
+  --text-caption-2--letter-spacing: var(--ls-caption-2);
+
+  /* Radius */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-tile: var(--r-tile);
+  --radius-full: var(--r-full);
+
+  /* Elevation */
+  --shadow-card: var(--elev-card);
+  --shadow-glass: var(--glass-shadow);
+
+  /* Motion */
+  --ease-out: var(--motion-ease-out);
+  --ease-in-out: var(--motion-ease-in-out);
+  --ease-sheet: var(--motion-ease-sheet);
+}
+
+/* ---------- Liquid Glass (functional layer only: tab bar, toolbars, sidebar, sheets, menus) ---------- */
+@utility glass {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow);
+  /* specular rim: bright top-leading edge fading to a faint bottom-trailing edge */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(145deg, var(--glass-rim-hi), var(--glass-rim-lo) 35%, transparent 60%, var(--glass-rim-lo));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background: var(--glass-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  :root.reduce-transparency & {
+    background: var(--glass-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    box-shadow: 0 0 0 1px var(--glass-edge), var(--glass-shadow);
+  }
+}
+
+/* Larger glass surfaces (sidebar, sheet, popover) are more opaque so text stays legible */
+@utility glass-strong {
+  background: var(--glass-bg-strong);
+  @media (prefers-reduced-transparency: reduce) { background: var(--glass-opaque); }
+  :root.reduce-transparency & { background: var(--glass-opaque); }
+}
+
+/* The one tinted action per view (Add, Done). Color goes in the background, not the glyph. */
+@utility glass-prominent {
+  background: color-mix(in srgb, var(--tint) 92%, transparent);
+  color: var(--on-tint);
+  @media (prefers-reduced-transparency: reduce) { background: var(--tint); }
+  :root.reduce-transparency & { background: var(--tint); }
+}
+
+/* Scroll edge effect: content blurs and fades where it meets a floating bar,
+   instead of a solid bar background. Place as a fixed sibling above the scroller. */
+@utility scroll-edge-top {
+  pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 80%, transparent), transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+@utility scroll-edge-bottom {
+  pointer-events: none;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bg) 80%, transparent), transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to top, #000 55%, transparent);
+  mask-image: linear-gradient(to top, #000 55%, transparent);
+}
+
+/* Press feedback on pointer-down, for every tappable custom control */
+@utility pressable {
+  transition: transform var(--dur-press) var(--motion-ease-out), background-color var(--dur-press) var(--motion-ease-out), opacity var(--dur-press);
+  &:active { transform: scale(0.97); }
+}
+
+/* Safe areas (real devices). Requires viewport-fit=cover in the viewport meta. */
+@utility pt-safe { padding-top: var(--safe-top); }
+@utility pb-safe { padding-bottom: var(--safe-bottom); }
