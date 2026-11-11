@@ -1,0 +1,10 @@
+.git
+**/node_modules
+ios
+DesignAssets
+docs
+web/dist
+web/playwright-report
+web/test-results
+**/.DS_Store
+**/.env

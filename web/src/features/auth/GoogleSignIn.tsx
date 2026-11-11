@@ -76,7 +76,11 @@ function GoogleButton({ text }: { text: 'signin_with' | 'signup_with' }) {
   return (
     <>
       <OrSeparator />
-      <div aria-busy={busy || undefined} className="flex min-h-11 justify-center [color-scheme:normal]">
+      {/* Google's button iframe is a light-scheme document. If the iframe element's
+          color-scheme differs (dark mode; `normal` resolves to the page's `light dark`),
+          the browser paints an opaque white backdrop behind it. Pinning `light` keeps
+          it transparent; Google's own `theme` option still draws the dark button. */}
+      <div aria-busy={busy || undefined} className="flex min-h-11 justify-center [color-scheme:light]">
         <div ref={ref} className="w-full max-w-[400px] [&>div]:mx-auto" />
       </div>
       {error && <FieldNote tone="error">{error}</FieldNote>}
