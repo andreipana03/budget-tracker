@@ -1,13 +1,19 @@
-import BudgetTrackerAPI
+import GoogleSignIn
 import SwiftUI
 
 @main
 struct BudgetTrackerApp: App {
-    private let client = Client(baseURL: AppConfiguration.apiBaseURL)
+    @State private var app = AppModel(api: APIClient(baseURL: AppConfiguration.apiBaseURL))
 
     var body: some Scene {
         WindowGroup {
-            HealthView(viewModel: HealthViewModel(client: client))
+            RootView()
+                .environment(app)
+                .environment(\.money, app.money)
+                .tint(Color.tintFill)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }

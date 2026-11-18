@@ -11,23 +11,16 @@ final class HealthViewModel {
     }
 
     private(set) var state = State.loading
-    private let client: Client
+    private let api: APIClient
 
-    init(client: Client) {
-        self.client = client
+    init(api: APIClient) {
+        self.api = api
     }
 
     func refresh() async {
         do {
-            switch try await client.getHealth() {
-            case .ok(let response):
-                state = .loaded(try response.body.json)
-            case .serviceUnavailable(let response):
-                // A 503 is still a valid health report.
-                state = .loaded(try response.body.json)
-            case .undocumented:
-                state = .unreachable
-            }
+            // A 503 is still a valid health report.
+            state = .loaded(try await api.health())
         } catch {
             state = .unreachable
         }

@@ -26,7 +26,7 @@ GO_TOOL := go tool -modfile=tools.mod
 MIGRATIONS := db/migrations
 
 .DEFAULT_GOAL := help
-.PHONY: help setup db-up db-down migrate db-seed db-test test-db backend web generate generate-backend generate-web generate-ios test web-test e2e
+.PHONY: help setup db-up db-down migrate db-seed db-test test-db backend web generate generate-backend generate-web generate-ios test web-test e2e ios-test ios-build
 
 help: ## List the available commands
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -86,6 +86,12 @@ test: test-db ## Run the backend tests (unit + integration), the web unit tests,
 
 web-test: ## Run the web unit tests (Vitest)
 	cd web && npm test
+
+ios-test: ## Run the iOS logic tests (formatting, parsing, copy) on the Mac with swift test
+	cd ios/Packages/BudgetTrackerCore && swift test
+
+ios-build: ## Build the iOS app for the simulator (needs Xcode)
+	xcodebuild -project ios/BudgetTracker.xcodeproj -scheme BudgetTracker -destination 'generic/platform=iOS Simulator' build
 
 # Needs `make db-up`. Recreates and seeds budget_tracker_e2e, starts the API on :8081 and Vite on :5174
 # (see web/playwright.config.ts), and runs Desktop Chromium + iPhone WebKit.
