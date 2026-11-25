@@ -29,6 +29,23 @@ export function tabForPath(pathname: string): SectionDef['id'] | null {
   return s === 'subscriptions' ? 'insights' : s
 }
 
+export type TabId = Exclude<SectionDef['id'], 'subscriptions'>
+
+/** The compact tab bar's 4 tabs, left to right (also the order pages swipe in). */
+export const TABS = SECTIONS.filter((s): s is SectionDef & { id: TabId } => s.id !== 'subscriptions')
+
+/** Index in TABS of the tab `pathname` belongs to, or -1 (e.g. /status). */
+export function tabIndexForPath(pathname: string): number {
+  const id = tabForPath(pathname)
+  return TABS.findIndex((t) => t.id === id)
+}
+
+/** Index in TABS when `pathname` is exactly a tab's root screen (where pages swipe), or -1. */
+export function tabRootIndex(pathname: string): number {
+  const p = pathname.replace(/\/+$/, '') || '/'
+  return TABS.findIndex((t) => t.path === p)
+}
+
 /** aria-keyshortcuts for section n (1-based). Chrome reserves ⌘1–9, so ⌥⌘n also works. */
 export function sectionShortcut(n: number): string {
   return `Meta+${n} Control+${n} Alt+Meta+${n}`

@@ -1,5 +1,5 @@
 import { Dialog } from '@base-ui/react/dialog'
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -81,7 +81,17 @@ export function ResponsiveSheet({
   const drag = useRef<{ startY: number; dy: number; lastY: number; lastT: number; v: number; id: number } | null>(null)
   const [confirmingDiscard, setConfirmingDiscard] = useState(false)
 
-  useSheetPresence(open)
+  // Base UI only plays the entry transition (slide up / fade in) when `open` turns true after
+  // mount. A sheet mounted already open (the Add sheet is a fresh instance per open) would just
+  // appear, so it opens one frame later.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+  const shown = open && mounted
+
+  useSheetPresence(shown)
 
   const requestClose = () => {
     if (isDirty) setConfirmingDiscard(true)
@@ -141,7 +151,7 @@ export function ResponsiveSheet({
   return (
     <>
       <Dialog.Root
-        open={open}
+        open={shown}
         onOpenChange={(next) => {
           if (next) onOpenChange(true)
           else requestClose()

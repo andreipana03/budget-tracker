@@ -4,18 +4,20 @@ import { RequireAuth } from '@/features/auth/RequireAuth'
 
 import { AppShell } from './AppShell'
 import { NotFoundPage } from './NotFoundPage'
+import { installPageTransitions } from './page-transitions'
+import { loadTabPage } from './tab-pages'
 
 /**
  * Signed-in screens, rendered inside the shell. Month lives in the URL as `?month=YYYY-MM`.
  * Every screen is its own lazily loaded chunk, so the first load only fetches the shell.
  */
 const appRoutes: RouteObject[] = [
-  { index: true, lazy: async () => ({ Component: (await import('@/features/home/HomePage')).HomePage }) },
-  { path: 'activity', lazy: async () => ({ Component: (await import('@/features/activity/ActivityPage')).ActivityPage }) },
+  { index: true, lazy: async () => ({ Component: await loadTabPage('home') }) },
+  { path: 'activity', lazy: async () => ({ Component: await loadTabPage('activity') }) },
   { path: 'activity/:id', lazy: async () => ({ Component: (await import('@/features/activity/TransactionDetailPage')).TransactionDetailPage }) },
-  { path: 'budgets', lazy: async () => ({ Component: (await import('@/features/budgets/BudgetsPage')).BudgetsPage }) },
+  { path: 'budgets', lazy: async () => ({ Component: await loadTabPage('budgets') }) },
   { path: 'budgets/:categoryId', lazy: async () => ({ Component: (await import('@/features/budgets/CategoryDetailPage')).CategoryDetailPage }) },
-  { path: 'insights', lazy: async () => ({ Component: (await import('@/features/insights/InsightsPage')).InsightsPage }) },
+  { path: 'insights', lazy: async () => ({ Component: await loadTabPage('insights') }) },
   { path: 'subscriptions', lazy: async () => ({ Component: (await import('@/features/subscriptions/SubscriptionsPage')).SubscriptionsPage }) },
   { path: 'settings/*', lazy: async () => ({ Component: (await import('@/features/settings/SettingsPage')).SettingsPage }) },
   { path: 'status', lazy: async () => ({ Component: (await import('@/features/health/HealthPage')).HealthPage }) },
@@ -47,3 +49,4 @@ export const routes: RouteObject[] = [
 ]
 
 export const router = createBrowserRouter(routes)
+installPageTransitions(router)
