@@ -17,6 +17,7 @@ import { formatEyebrow, formatMonthName, localToday, monthOf } from '@/lib/forma
 import { useIsRegular } from '@/lib/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
+import { AccountsSection } from './AccountsSection'
 import { HomeHero, HomeHeroSkeleton } from './HomeHero'
 import { PendingRow, SubscriptionRow, WaitingHeader } from './UpcomingRows'
 import { useHome, type Home } from './useHome'
@@ -27,7 +28,8 @@ const TWO_COLUMN_LIST =
 /**
  * Home (design § 7): how much is left, and am I on pace?
  * Compact: eyebrow date + "November ⌄" (month picker) · hero · Budgets (4, ranked by
- * attention) · Upcoming (pending charges first, then what's due in 7 days) · Recent (4).
+ * attention) · Upcoming (pending charges first, then what's due in 7 days) · Recent (4) ·
+ * Accounts (balances + ≈ total; the sidebar has them at ≥1024).
  * Desktop grid: hero 8 + Upcoming 4, all budgets in two columns 7 + Recent 5.
  */
 export function HomePage() {
@@ -192,6 +194,9 @@ function HomeContent({
           </List>
         )}
       </Section>
+
+      {/* ≥1024 shows the same group in the sidebar (same features at every width, § 5.1). */}
+      {!isRegular && <AccountsSection />}
     </div>
   )
 }

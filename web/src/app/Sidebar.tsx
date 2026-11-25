@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router'
 
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { SkeletonBlock } from '@/components/ui/States'
-import { useAccounts, useSubscriptions, type Account } from '@/lib/api/queries'
+import { accountIcon } from '@/lib/account-icon'
+import { useAccounts, useSubscriptions } from '@/lib/api/queries'
 import { formatMoney, useRegion } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -36,12 +37,6 @@ function SidebarItem({
       {trailing}
     </Link>
   )
-}
-
-function accountIcon(a: Account, homeCurrency: string): IconName {
-  if (a.type === 'cash') return 'money'
-  if (a.currency !== homeCurrency) return 'globe-hemisphere-west'
-  return 'credit-card'
 }
 
 /**
