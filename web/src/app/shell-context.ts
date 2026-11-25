@@ -5,6 +5,8 @@ export interface ShellState {
   scrollerRef: RefObject<HTMLDivElement | null>
   sidebarHidden: boolean
   toggleSidebar: () => void
+  /** True inside the page swipe's peek (a neighbour tab rendered beside the page): don't touch the document. */
+  peek?: boolean
 }
 
 export const ShellContext = createContext<ShellState | null>(null)

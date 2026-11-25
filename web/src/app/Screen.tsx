@@ -76,9 +76,10 @@ export function Screen({
   const shell = useShell()
   const scrolled = useScrolledPast(40)
 
+  const peek = shell?.peek === true
   useEffect(() => {
-    document.title = `${title} — Budget Tracker`
-  }, [title])
+    if (!peek) document.title = `${title} — Budget Tracker`
+  }, [title, peek])
 
   const titleContent = titleAction ? (
     <button type="button" onClick={titleAction.onClick} aria-label={titleAction.label} className="inline-flex items-center gap-1.5 font-bold">

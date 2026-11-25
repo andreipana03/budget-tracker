@@ -97,6 +97,7 @@ export function SwipeRow({
 
   return (
     <div
+      data-swipe-row // the page swipe leaves these rows to their own actions
       className={cn('ui-row ui-row--lg relative overflow-hidden before:z-[1] lg:overflow-visible', className)}
       style={{ touchAction: 'pan-y' }}
       onPointerDown={onPointerDown}

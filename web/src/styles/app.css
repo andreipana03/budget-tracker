@@ -130,4 +130,75 @@
   @media (prefers-reduced-motion: reduce) {
     .app-shell[data-sheet-open] .app-main { transform: none; border-radius: 0; opacity: 1; }
   }
+
+  /* ---------- Compact tab bar: the selected pill slides; drag it across the bar (§ 6.1) ---------- */
+  .tab-pill {
+    transform: translateX(calc((var(--tab-pos) + var(--swipe-progress, 0)) * 100%));
+    transition: transform var(--dur-fast) var(--motion-ease-out), scale var(--dur-fast) var(--motion-ease-out);
+  }
+  .tab-pill[data-dragging] {
+    scale: 1.08;
+    transition: scale var(--dur-fast) var(--motion-ease-out);
+  }
+  .app-shell[data-swiping] .tab-pill { transition: none; }
+
+  /* A page reached by swiping already grew its bars in the peek: don't grow them twice. */
+  .app-main[data-swiped] :is(.ui-grow-x, .ui-grow-y) { animation: none; }
 }
+
+/* ---------- Compact page transitions (§ 4.7; page-transitions.ts sets data-page-transition) ----------
+   The page (.app-main) slides; the tab bar stays put and stays live (its pill animates on its
+   own); everything else swaps instantly. Taps pass through to the new page while it slides. */
+:root {
+  --dur-page: 380ms;
+}
+@media (max-width: 1023.98px) {
+  .app-main { view-transition-name: page; }
+  .app-tabbar { view-transition-name: tabbar; }
+}
+::view-transition { pointer-events: none; }
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-new(tabbar) { animation: none; }
+::view-transition-old(tabbar) { display: none; }
+::view-transition-old(page),
+::view-transition-new(page) {
+  mix-blend-mode: normal;
+  animation-duration: var(--dur-page);
+  animation-timing-function: var(--motion-ease-sheet);
+  animation-fill-mode: both;
+}
+/* Tab → tab: the pages move side by side, in tab order (like the swipe). */
+:root[data-page-transition="forward"]::view-transition-old(page) { animation-name: page-to-left; }
+:root[data-page-transition="forward"]::view-transition-new(page) { animation-name: page-from-right; }
+:root[data-page-transition="back"]::view-transition-old(page) { animation-name: page-to-right; }
+:root[data-page-transition="back"]::view-transition-new(page) { animation-name: page-from-left; }
+/* Push: the new screen slides over, the old one drifts back and dims. Pop reverses it. */
+:root[data-page-transition="push"]::view-transition-old(page) { animation-name: page-under-out; }
+:root[data-page-transition="push"]::view-transition-new(page) {
+  animation-name: page-from-right;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.18);
+}
+:root[data-page-transition="pop"]::view-transition-old(page) {
+  z-index: 1;
+  animation-name: page-to-right;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.18);
+}
+:root[data-page-transition="pop"]::view-transition-new(page) { animation-name: page-under-in; }
+:root[data-page-transition="fade"]::view-transition-old(page) { animation: page-fade-out var(--dur-fast) linear both; }
+:root[data-page-transition="fade"]::view-transition-new(page) { animation: page-fade-in var(--dur-fast) linear both; }
+:root[data-page-transition="none"]::view-transition-old(page),
+:root[data-page-transition="none"]::view-transition-new(page) { animation: none; }
+:root[data-page-transition="none"]::view-transition-old(page) { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-page-transition]:not([data-page-transition="none"])::view-transition-old(page) { animation: page-fade-out 150ms linear both; box-shadow: none; }
+  :root[data-page-transition]:not([data-page-transition="none"])::view-transition-new(page) { animation: page-fade-in 150ms linear both; box-shadow: none; }
+}
+@keyframes page-to-left { to { transform: translateX(-100%); } }
+@keyframes page-to-right { to { transform: translateX(100%); } }
+@keyframes page-from-right { from { transform: translateX(100%); } }
+@keyframes page-from-left { from { transform: translateX(-100%); } }
+@keyframes page-under-out { to { transform: translateX(-30%); filter: brightness(0.92); } }
+@keyframes page-under-in { from { transform: translateX(-30%); filter: brightness(0.92); } }
+@keyframes page-fade-out { to { opacity: 0; } }
+@keyframes page-fade-in { from { opacity: 0; } }
