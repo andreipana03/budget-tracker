@@ -537,6 +537,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move money from one account to another
+         * @description Between accounts in the same currency both amounts are the same (`toAmountMinor` can
+         *     be left out). Between currencies, send what actually arrived; left out, it's converted
+         *     with that day's BNR rate (422 `fx_rate_unavailable` if missing).
+         *     Idempotent when the same `id` is sent again.
+         */
+        post: operations["createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** One transfer */
+        get: operations["getTransfer"];
+        /**
+         * Replace a transfer's editable fields
+         * @description 409 `version_conflict`. Between currencies, a left-out `toAmountMinor` keeps the
+         *     current one when the amount, accounts and day are unchanged; otherwise it's
+         *     converted again with that day's BNR rate.
+         */
+        put: operations["updateTransfer"];
+        post?: never;
+        /** Delete a transfer (soft; restore it with Undo) */
+        delete: operations["deleteTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo a delete */
+        post: operations["restoreTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/budgets": {
         parameters: {
             query?: never;
@@ -1055,6 +1123,87 @@ export interface components {
             /** @description Pass as `cursor` to get the next page; null on the last page. */
             nextCursor: string | null;
             homeCurrency: components["schemas"]["CurrencyCode"];
+            /**
+             * @description Only with `includeTransfers=true`: the transfers that belong between `items` on
+             *     this page, in the same order (occurredOn desc, occurredAt desc nulls last, id desc).
+             *     Merge them with `items` to show one list. Not counted in `dayTotals`.
+             */
+            transfers?: components["schemas"]["Transfer"][];
+        };
+        Transfer: {
+            /** Format: uuid */
+            id: string;
+            fromAccount: components["schemas"]["AccountRef"];
+            /**
+             * Format: int64
+             * @description What left `fromAccount`, in its currency.
+             */
+            fromAmountMinor: number;
+            toAccount: components["schemas"]["AccountRef"];
+            /**
+             * Format: int64
+             * @description What arrived in `toAccount`, in its currency. Equals `fromAmountMinor` when the currencies match.
+             */
+            toAmountMinor: number;
+            /**
+             * Format: date
+             * @description Calendar day in the household's time zone.
+             */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt: string | null;
+            note: string | null;
+            /** Format: int64 */
+            rowVersion: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateTransferRequest: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            fromAccountId: string;
+            /**
+             * Format: uuid
+             * @description A different account from `fromAccountId`.
+             */
+            toAccountId: string;
+            /**
+             * Format: int64
+             * @description In the currency of `fromAccountId`.
+             */
+            fromAmountMinor: number;
+            /**
+             * Format: int64
+             * @description In the currency of `toAccountId`. Same currency: leave it out or send `fromAmountMinor`.
+             *     Different currencies: what actually arrived (fees included); left out, it's converted
+             *     with the BNR rate of `occurredOn`.
+             */
+            toAmountMinor?: number;
+            /** Format: date */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            note?: string;
+        };
+        UpdateTransferRequest: {
+            /** Format: uuid */
+            fromAccountId: string;
+            /** Format: uuid */
+            toAccountId: string;
+            /** Format: int64 */
+            fromAmountMinor: number;
+            /** Format: int64 */
+            toAmountMinor?: number;
+            /** Format: date */
+            occurredOn: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            note?: string;
+            /** Format: int64 */
+            rowVersion: number;
         };
         RepeatRule: {
             frequency: components["schemas"]["Frequency"];
@@ -2157,8 +2306,18 @@ export interface operations {
                 from?: string;
                 /** @description Last day to include. */
                 to?: string;
-                /** @description Case-insensitive search in title and note. */
+                /**
+                 * @description Case-insensitive search in title and note (transfers: their note and both
+                 *     account names).
+                 */
                 q?: string;
+                /**
+                 * @description Also return the household's transfers in `transfers`, merged into the same
+                 *     order and pages as `items` (so `limit` counts both). Transfers have no kind,
+                 *     status or category: any of those filters leaves them out. `accountId` matches
+                 *     either side of a transfer.
+                 */
+                includeTransfers?: boolean;
                 /** @description The `nextCursor` of the previous page. */
                 cursor?: string;
                 limit?: number;
@@ -2345,6 +2504,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description The new transfer */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    restoreTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The restored transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
                 };
             };
             default: components["responses"]["Error"];

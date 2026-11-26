@@ -32,6 +32,7 @@ tags:
   - name: accounts
   - name: categories
   - name: transactions
+  - name: transfers
   - name: budgets
   - name: screens
   - name: subscriptions
@@ -644,11 +645,24 @@ paths:
             format: date
         - name: q
           in: query
-          description: Case-insensitive search in title and note.
+          description: |
+            Case-insensitive search in title and note (transfers: their note and both
+            account names).
           required: false
           schema:
             type: string
             maxLength: 100
+        - name: includeTransfers
+          in: query
+          description: |
+            Also return the household's transfers in `transfers`, merged into the same
+            order and pages as `items` (so `limit` counts both). Transfers have no kind,
+            status or category: any of those filters leaves them out. `accountId` matches
+            either side of a transfer.
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: cursor
           in: query
           description: The `nextCursor` of the previous page.
@@ -795,6 +809,99 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- transfers
+  # Money moved between two of the household's accounts. Never counted as spending or
+  # income. Listed in Activity through `GET /transactions?includeTransfers=true`.
+  /transfers:
+    post:
+      operationId: createTransfer
+      summary: Move money from one account to another
+      description: |
+        Between accounts in the same currency both amounts are the same (`toAmountMinor` can
+        be left out). Between currencies, send what actually arrived; left out, it's converted
+        with that day's BNR rate (422 `fx_rate_unavailable` if missing).
+        Idempotent when the same `id` is sent again.
+      tags: [transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferRequest"
+      responses:
+        "201":
+          description: The new transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+        default:
+          $ref: "#/components/responses/Error"
+  /transfers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: getTransfer
+      summary: One transfer
+      tags: [transfers]
+      responses:
+        "200":
+          description: The transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: updateTransfer
+      summary: Replace a transfer's editable fields
+      description: |
+        409 `version_conflict`. Between currencies, a left-out `toAmountMinor` keeps the
+        current one when the amount, accounts and day are unchanged; otherwise it's
+        converted again with that day's BNR rate.
+      tags: [transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTransferRequest"
+      responses:
+        "200":
+          description: The updated transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteTransfer
+      summary: Delete a transfer (soft; restore it with Undo)
+      tags: [transfers]
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Error"
+  /transfers/{id}/restore:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      operationId: restoreTransfer
+      summary: Undo a delete
+      tags: [transfers]
+      responses:
+        "200":
+          description: The restored transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
         default:
           $ref: "#/components/responses/Error"
 
@@ -1676,6 +1783,124 @@ components:
           nullable: true
         homeCurrency:
           $ref: "#/components/schemas/CurrencyCode"
+        transfers:
+          description: |
+            Only with `includeTransfers=true`: the transfers that belong between `items` on
+            this page, in the same order (occurredOn desc, occurredAt desc nulls last, id desc).
+            Merge them with `items` to show one list. Not counted in `dayTotals`.
+          type: array
+          items:
+            $ref: "#/components/schemas/Transfer"
+    Transfer:
+      type: object
+      required: [id, fromAccount, fromAmountMinor, toAccount, toAmountMinor, occurredOn, occurredAt, note,
+                 rowVersion, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        fromAccount:
+          $ref: "#/components/schemas/AccountRef"
+        fromAmountMinor:
+          description: What left `fromAccount`, in its currency.
+          type: integer
+          format: int64
+        toAccount:
+          $ref: "#/components/schemas/AccountRef"
+        toAmountMinor:
+          description: What arrived in `toAccount`, in its currency. Equals `fromAmountMinor` when the currencies match.
+          type: integer
+          format: int64
+        occurredOn:
+          description: Calendar day in the household's time zone.
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        rowVersion:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateTransferRequest:
+      type: object
+      required: [fromAccountId, toAccountId, fromAmountMinor, occurredOn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          description: A different account from `fromAccountId`.
+          type: string
+          format: uuid
+        fromAmountMinor:
+          description: In the currency of `fromAccountId`.
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        toAmountMinor:
+          description: |
+            In the currency of `toAccountId`. Same currency: leave it out or send `fromAmountMinor`.
+            Different currencies: what actually arrived (fees included); left out, it's converted
+            with the BNR rate of `occurredOn`.
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        occurredOn:
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 500
+    UpdateTransferRequest:
+      type: object
+      required: [fromAccountId, toAccountId, fromAmountMinor, occurredOn, rowVersion]
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        fromAmountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        toAmountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000000000000000
+        occurredOn:
+          type: string
+          format: date
+        occurredAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 500
+        rowVersion:
+          type: integer
+          format: int64
     RepeatRule:
       type: object
       required: [frequency]

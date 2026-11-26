@@ -24,7 +24,8 @@ export function DayHeading({
 }) {
   const region = useRegion()
   const { title, detail } = dayHeaderParts(group.date, today)
-  const cur = currency ?? group.items[0]?.homeCurrency ?? 'RON'
+  const firstTx = group.items.find((e) => e.type === 'transaction')
+  const cur = currency ?? (firstTx?.type === 'transaction' ? firstTx.transaction.homeCurrency : undefined) ?? 'RON'
   const showIncome = kind === 'income' || (group.expenseHomeMinor === 0 && group.incomeHomeMinor > 0)
   const total = showIncome
     ? group.incomeHomeMinor > 0

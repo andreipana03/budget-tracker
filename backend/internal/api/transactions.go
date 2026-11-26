@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -35,8 +36,34 @@ type ledgerCursor struct {
 	ID uuid.UUID  `json:"i"`
 }
 
-func ledgerEncodeCursor(t store.Transaction) string {
-	b, _ := json.Marshal(ledgerCursor{On: t.OccurredOn.Format(time.DateOnly), At: t.OccurredAt, ID: t.ID})
+// ledgerKey is where a transaction or transfer sits in Activity's order:
+// occurred_on desc, occurred_at desc nulls last, id desc.
+type ledgerKey struct {
+	On time.Time
+	At *time.Time
+	ID uuid.UUID
+}
+
+func ledgerTxKey(t store.Transaction) ledgerKey { return ledgerKey{On: t.OccurredOn, At: t.OccurredAt, ID: t.ID} }
+func ledgerTrKey(t store.Transfer) ledgerKey    { return ledgerKey{On: t.OccurredOn, At: t.OccurredAt, ID: t.ID} }
+
+// ledgerBefore reports whether a comes before b in Activity's order (the SQL ORDER BY;
+// uuids compare byte by byte, as in PostgreSQL).
+func ledgerBefore(a, b ledgerKey) bool {
+	if !a.On.Equal(b.On) {
+		return a.On.After(b.On)
+	}
+	if (a.At == nil) != (b.At == nil) {
+		return a.At != nil
+	}
+	if a.At != nil && !a.At.Equal(*b.At) {
+		return a.At.After(*b.At)
+	}
+	return bytes.Compare(a.ID[:], b.ID[:]) > 0
+}
+
+func ledgerEncodeCursor(k ledgerKey) string {
+	b, _ := json.Marshal(ledgerCursor{On: k.On.Format(time.DateOnly), At: k.At, ID: k.ID})
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
@@ -138,14 +165,46 @@ func (s *Server) ListTransactions(ctx context.Context, request gen.ListTransacti
 	if err != nil {
 		return nil, fmt.Errorf("list transactions: %w", err)
 	}
+	// Transfers have no kind, status or category, so any of those filters leaves them out.
+	includeTransfers := params.IncludeTransfers != nil && *params.IncludeTransfers
+	var transfers []store.LedgerListTransfersRow
+	if includeTransfers && f.Kind == nil && f.Status == nil && f.CategoryID == nil {
+		transfers, err = s.q.LedgerListTransfers(ctx, store.LedgerListTransfersParams{
+			HouseholdID: h.ID, AccountID: f.AccountID, FromOn: f.FromOn, ToBefore: f.ToBefore, Q: f.Q,
+			CursorOn: f.CursorOn, CursorAt: f.CursorAt, CursorID: f.CursorID, RowLimit: f.RowLimit,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("list transfers: %w", err)
+		}
+	}
 	out := gen.TransactionPage{
 		Items:        make([]gen.Transaction, 0, min(len(rows), limit)),
 		DayTotals:    []gen.DayTotal{},
 		HomeCurrency: h.HomeCurrency,
 	}
-	if len(rows) > limit {
-		rows = rows[:limit]
-		out.NextCursor = ptr(ledgerEncodeCursor(rows[len(rows)-1].Transaction))
+	// Merge both sorted lists (each fetched with one row extra) and keep the first `limit`
+	// entries; the last one kept is the cursor of the next page.
+	i, j := 0, 0
+	var last ledgerKey
+	for i+j < limit && (i < len(rows) || j < len(transfers)) {
+		if j == len(transfers) || (i < len(rows) && ledgerBefore(ledgerTxKey(rows[i].Transaction), ledgerTrKey(transfers[j].Transfer))) {
+			last = ledgerTxKey(rows[i].Transaction)
+			i++
+		} else {
+			last = ledgerTrKey(transfers[j].Transfer)
+			j++
+		}
+	}
+	if i < len(rows) || j < len(transfers) {
+		out.NextCursor = ptr(ledgerEncodeCursor(last))
+	}
+	rows, transfers = rows[:i], transfers[:j]
+	if includeTransfers {
+		list := make([]gen.Transfer, 0, len(transfers))
+		for _, r := range transfers {
+			list = append(list, ledgerTransfer(r.Transfer, r.FromName, r.FromType, r.ToName, r.ToType))
+		}
+		out.Transfers = &list
 	}
 	var days []time.Time
 	for _, r := range rows {
@@ -306,16 +365,22 @@ func ledgerPickCategory(ctx context.Context, q *store.Queries, household, id uui
 
 // ledgerPickAccount loads an account for a transaction or subscription.
 func ledgerPickAccount(ctx context.Context, q *store.Queries, household, id uuid.UUID, keep bool, errs *[]apierr.FieldError) (store.Account, error) {
+	return ledgerPickAccountAs(ctx, q, household, id, "accountId", keep, errs)
+}
+
+// ledgerPickAccountAs loads an account, reporting problems on `field`. keep allows an
+// archived account the row being edited already uses.
+func ledgerPickAccountAs(ctx context.Context, q *store.Queries, household, id uuid.UUID, field string, keep bool, errs *[]apierr.FieldError) (store.Account, error) {
 	a, err := q.LedgerGetAccount(ctx, store.LedgerGetAccountParams{ID: id, HouseholdID: household})
 	if dbx.IsNoRows(err) {
-		*errs = append(*errs, apierr.Field("accountId", "not_found", "This account doesn't exist."))
+		*errs = append(*errs, apierr.Field(field, "not_found", "This account doesn't exist."))
 		return a, nil
 	}
 	if err != nil {
 		return a, fmt.Errorf("get account: %w", err)
 	}
 	if a.ArchivedAt != nil && !keep {
-		*errs = append(*errs, apierr.Field("accountId", "archived", "This account is archived."))
+		*errs = append(*errs, apierr.Field(field, "archived", "This account is archived."))
 	}
 	return a, nil
 }

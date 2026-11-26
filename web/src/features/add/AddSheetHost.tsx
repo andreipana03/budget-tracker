@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAddSheet, type AddSheetOptions } from '@/app/add-sheet'
 import { SelectRow, TextFieldRow } from '@/components/ui/FormRows'
-import { List, RowAccessory } from '@/components/ui/List'
+import { List } from '@/components/ui/List'
 import { ResponsiveSheet } from '@/components/ui/ResponsiveSheet'
 import { rowClasses } from '@/components/ui/row-classes'
 import { Segmented } from '@/components/ui/Segmented'
@@ -21,12 +21,13 @@ import {
   useHousehold,
   type Category,
 } from '@/lib/api/queries'
-import { decimalSeparator, formatDay, localeForRegion, toAmountInput, useRegion } from '@/lib/format'
+import { decimalSeparator, formatDay, toAmountInput, useRegion } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { amountMinorFromInput, sanitizeAmountInput } from './amount-entry'
+import { amountMinorFromInput, groupSeparator, sanitizeAmountInput } from './amount-entry'
 import { AmountEntry } from './AmountEntry'
 import { CategoryGrid } from './CategoryGrid'
+import { DateRow } from './DateRow'
 import { pickDefaults } from './defaults'
 import { buildHint } from './hint'
 import { useCurrentBudgets, useFxQuote } from './queries'
@@ -60,12 +61,6 @@ const REPEAT_OPTIONS = [
 
 /** Entry time for a transaction dated today (the desktop table shows it). */
 const nowIso = () => new Date().toISOString()
-
-function groupSeparator(region: string): string {
-  return (
-    new Intl.NumberFormat(localeForRegion(region)).formatToParts(10000).find((p) => p.type === 'group')?.value ?? '.'
-  ).replace(/[  ]/g, ' ')
-}
 
 /**
  * The global Add / Edit sheet (design § 6.11), rendered once by the shell. Opened with
@@ -411,36 +406,6 @@ function AddSheet({ open, options, onClose }: { open: boolean; options: AddSheet
         </>
       )}
     </ResponsiveSheet>
-  )
-}
-
-/** Date row: "Today" / "Yesterday" / "Mon 16 Nov"; the native date picker sits on top of it. */
-function DateRow({ value, today, onChange }: { value: string; today: string; onChange: (date: string) => void }) {
-  const label = value ? formatDay(value, today || undefined) : 'Choose'
-  return (
-    <label className={cn(rowClasses({ hasLeading: false, interactive: true }), 'relative')}>
-      <span className="flex-none text-body">Date</span>
-      <span className="min-w-0 flex-1" />
-      <span className="truncate text-body text-label-2">{label}</span>
-      <RowAccessory kind="disclosure" />
-      <input
-        type="date"
-        aria-label={`Date: ${label}`}
-        value={value}
-        required
-        onChange={(e) => {
-          if (e.target.value) onChange(e.target.value)
-        }}
-        onClick={(e) => {
-          try {
-            e.currentTarget.showPicker?.()
-          } catch {
-            // not allowed here (e.g. inside an iframe): the native control still opens on tap
-          }
-        }}
-        className="absolute inset-0 h-full w-full cursor-default text-[16px] opacity-0"
-      />
-    </label>
   )
 }
 

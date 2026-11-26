@@ -7,7 +7,7 @@
  *   sanitizeAmountInput('1.500', 'JPY', ',')  → "1500"     (no minor units → separators are grouping)
  *   sanitizeAmountInput('007', 'RON', ',')    → "7"
  */
-import { minorUnits, parseAmount } from '@/lib/format'
+import { localeForRegion, minorUnits, parseAmount } from '@/lib/format'
 
 /** Whole-unit digits allowed (9.999.999.999 is plenty for a student budget). */
 const MAX_INTEGER_DIGITS = 10
@@ -51,4 +51,11 @@ export function amountDisplayParts(
   const int = i === -1 ? text : text.slice(0, i)
   const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, groupSep)
   return { integer: grouped, separator: i === -1 ? '' : decimalSep, fraction: i === -1 ? '' : text.slice(i + 1) }
+}
+
+/** The region's grouping separator for the amount display ("." in RO; no-break spaces become plain spaces). */
+export function groupSeparator(region: string): string {
+  return (
+    new Intl.NumberFormat(localeForRegion(region)).formatToParts(10000).find((p) => p.type === 'group')?.value ?? '.'
+  ).replace(/[  ]/g, ' ')
 }

@@ -1525,6 +1525,13 @@ extension Components {
             public var nextCursor: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TransactionPage/homeCurrency`.
             public var homeCurrency: Components.Schemas.CurrencyCode
+            /// Only with `includeTransfers=true`: the transfers that belong between `items` on
+            /// this page, in the same order (occurredOn desc, occurredAt desc nulls last, id desc).
+            /// Merge them with `items` to show one list. Not counted in `dayTotals`.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/TransactionPage/transfers`.
+            public var transfers: [Components.Schemas.Transfer]?
             /// Creates a new `TransactionPage`.
             ///
             /// - Parameters:
@@ -1532,22 +1539,236 @@ extension Components {
             ///   - dayTotals:
             ///   - nextCursor: Pass as `cursor` to get the next page; null on the last page.
             ///   - homeCurrency:
+            ///   - transfers: Only with `includeTransfers=true`: the transfers that belong between `items` on
             public init(
                 items: [Components.Schemas.Transaction],
                 dayTotals: [Components.Schemas.DayTotal],
                 nextCursor: Swift.String? = nil,
-                homeCurrency: Components.Schemas.CurrencyCode
+                homeCurrency: Components.Schemas.CurrencyCode,
+                transfers: [Components.Schemas.Transfer]? = nil
             ) {
                 self.items = items
                 self.dayTotals = dayTotals
                 self.nextCursor = nextCursor
                 self.homeCurrency = homeCurrency
+                self.transfers = transfers
             }
             public enum CodingKeys: String, CodingKey {
                 case items
                 case dayTotals
                 case nextCursor
                 case homeCurrency
+                case transfers
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Transfer`.
+        public struct Transfer: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Transfer/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transfer/fromAccount`.
+            public var fromAccount: Components.Schemas.AccountRef
+            /// What left `fromAccount`, in its currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transfer/fromAmountMinor`.
+            public var fromAmountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transfer/toAccount`.
+            public var toAccount: Components.Schemas.AccountRef
+            /// What arrived in `toAccount`, in its currency. Equals `fromAmountMinor` when the currencies match.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transfer/toAmountMinor`.
+            public var toAmountMinor: Swift.Int64
+            /// Calendar day in the household's time zone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Transfer/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Transfer/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/Transfer/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Transfer/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Transfer/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Transfer/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `Transfer`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - fromAccount:
+            ///   - fromAmountMinor: What left `fromAccount`, in its currency.
+            ///   - toAccount:
+            ///   - toAmountMinor: What arrived in `toAccount`, in its currency. Equals `fromAmountMinor` when the currencies match.
+            ///   - occurredOn: Calendar day in the household's time zone.
+            ///   - occurredAt:
+            ///   - note:
+            ///   - rowVersion:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                fromAccount: Components.Schemas.AccountRef,
+                fromAmountMinor: Swift.Int64,
+                toAccount: Components.Schemas.AccountRef,
+                toAmountMinor: Swift.Int64,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                note: Swift.String? = nil,
+                rowVersion: Swift.Int64,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.fromAccount = fromAccount
+                self.fromAmountMinor = fromAmountMinor
+                self.toAccount = toAccount
+                self.toAmountMinor = toAmountMinor
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.note = note
+                self.rowVersion = rowVersion
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case fromAccount
+                case fromAmountMinor
+                case toAccount
+                case toAmountMinor
+                case occurredOn
+                case occurredAt
+                case note
+                case rowVersion
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateTransferRequest`.
+        public struct CreateTransferRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/fromAccountId`.
+            public var fromAccountId: Swift.String
+            /// A different account from `fromAccountId`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/toAccountId`.
+            public var toAccountId: Swift.String
+            /// In the currency of `fromAccountId`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/fromAmountMinor`.
+            public var fromAmountMinor: Swift.Int64
+            /// In the currency of `toAccountId`. Same currency: leave it out or send `fromAmountMinor`.
+            /// Different currencies: what actually arrived (fees included); left out, it's converted
+            /// with the BNR rate of `occurredOn`.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/toAmountMinor`.
+            public var toAmountMinor: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/CreateTransferRequest/note`.
+            public var note: Swift.String?
+            /// Creates a new `CreateTransferRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - fromAccountId:
+            ///   - toAccountId: A different account from `fromAccountId`.
+            ///   - fromAmountMinor: In the currency of `fromAccountId`.
+            ///   - toAmountMinor: In the currency of `toAccountId`. Same currency: leave it out or send `fromAmountMinor`.
+            ///   - occurredOn:
+            ///   - occurredAt:
+            ///   - note:
+            public init(
+                id: Swift.String? = nil,
+                fromAccountId: Swift.String,
+                toAccountId: Swift.String,
+                fromAmountMinor: Swift.Int64,
+                toAmountMinor: Swift.Int64? = nil,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                note: Swift.String? = nil
+            ) {
+                self.id = id
+                self.fromAccountId = fromAccountId
+                self.toAccountId = toAccountId
+                self.fromAmountMinor = fromAmountMinor
+                self.toAmountMinor = toAmountMinor
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case fromAccountId
+                case toAccountId
+                case fromAmountMinor
+                case toAmountMinor
+                case occurredOn
+                case occurredAt
+                case note
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest`.
+        public struct UpdateTransferRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/fromAccountId`.
+            public var fromAccountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/toAccountId`.
+            public var toAccountId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/fromAmountMinor`.
+            public var fromAmountMinor: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/toAmountMinor`.
+            public var toAmountMinor: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/occurredOn`.
+            public var occurredOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/occurredAt`.
+            public var occurredAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpdateTransferRequest/rowVersion`.
+            public var rowVersion: Swift.Int64
+            /// Creates a new `UpdateTransferRequest`.
+            ///
+            /// - Parameters:
+            ///   - fromAccountId:
+            ///   - toAccountId:
+            ///   - fromAmountMinor:
+            ///   - toAmountMinor:
+            ///   - occurredOn:
+            ///   - occurredAt:
+            ///   - note:
+            ///   - rowVersion:
+            public init(
+                fromAccountId: Swift.String,
+                toAccountId: Swift.String,
+                fromAmountMinor: Swift.Int64,
+                toAmountMinor: Swift.Int64? = nil,
+                occurredOn: Swift.String,
+                occurredAt: Foundation.Date? = nil,
+                note: Swift.String? = nil,
+                rowVersion: Swift.Int64
+            ) {
+                self.fromAccountId = fromAccountId
+                self.toAccountId = toAccountId
+                self.fromAmountMinor = fromAmountMinor
+                self.toAmountMinor = toAmountMinor
+                self.occurredOn = occurredOn
+                self.occurredAt = occurredAt
+                self.note = note
+                self.rowVersion = rowVersion
+            }
+            public enum CodingKeys: String, CodingKey {
+                case fromAccountId
+                case toAccountId
+                case fromAmountMinor
+                case toAmountMinor
+                case occurredOn
+                case occurredAt
+                case note
+                case rowVersion
             }
         }
         /// - Remark: Generated from `#/components/schemas/RepeatRule`.

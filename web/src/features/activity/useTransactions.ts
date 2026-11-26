@@ -14,6 +14,8 @@ export interface TransactionFilters {
   categoryId?: string
   accountId?: string
   q?: string
+  /** Activity: transfers merged into the same pages (the API leaves them out under kind/status/category filters). */
+  includeTransfers?: boolean
 }
 
 const PAGE_SIZE = 50
@@ -26,11 +28,13 @@ function cleanFilters(f: TransactionFilters): TransactionFilters {
   if (f.categoryId) out.categoryId = f.categoryId
   if (f.accountId) out.accountId = f.accountId
   if (f.q?.trim()) out.q = f.q.trim()
+  if (f.includeTransfers) out.includeTransfers = true
   return out
 }
 
 /**
- * Activity's list: GET /transactions a page at a time (keyset cursor), newest first.
+ * Activity's list: GET /transactions a page at a time (keyset cursor), newest first;
+ * with `includeTransfers`, each page also carries the transfers that belong in it.
  * Keeps the previous results on screen while a new search or filter loads.
  */
 export function useTransactions(filters: TransactionFilters) {

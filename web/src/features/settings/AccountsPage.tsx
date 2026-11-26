@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { Screen, ToolbarButton, ToolbarGroup } from '@/app/Screen'
+import { useTransferSheet } from '@/app/transfer-sheet'
 import { EmptyState, GlassButton, InlineError, List, Money, Row, Section, SkeletonRows } from '@/components/ui'
 import { useAccounts, useHousehold, type Account } from '@/lib/api/queries'
 
@@ -8,13 +9,19 @@ import { AccountSheet } from './AccountSheet'
 import { AccountTile } from './parts'
 import { accountType, SETTINGS_COLUMN } from './settings-logic'
 
-/** Accounts (/settings/accounts): balances, ≈ total, archived ones apart; add/edit in a sheet. */
+/**
+ * Accounts (/settings/accounts): balances, ≈ total, archived ones apart; add/edit in a
+ * sheet. "Transfer" (⇄ in the compact top bar, a toolbar button on desktop) moves money
+ * between them in the Transfer sheet.
+ */
 export function AccountsPage() {
   const accounts = useAccounts({ includeArchived: true })
   const household = useHousehold()
+  const transferSheet = useTransferSheet()
   const [sheet, setSheet] = useState<{ open: boolean; account: Account | null }>({ open: false, account: null })
 
   const add = () => setSheet({ open: true, account: null })
+  const transfer = () => transferSheet.open()
   const data = accounts.data
   const active = data?.items.filter((a) => !a.archived) ?? []
   const archived = data?.items.filter((a) => a.archived) ?? []
@@ -47,9 +54,21 @@ export function AccountsPage() {
       title="Accounts"
       back={{ to: '/settings', label: 'Back to Settings' }}
       hideToolbarActions
-      topBarActions={<GlassButton text="Add Account" onClick={add} />}
+      topBarActions={
+        <>
+          {active.length > 0 && (
+            <GlassButton icon="arrows-left-right" label="Transfer Between Accounts" title="Transfer Between Accounts" onClick={transfer} />
+          )}
+          <GlassButton text="Add Account" onClick={add} />
+        </>
+      }
       toolbarControls={
-        <ToolbarGroup>
+        <ToolbarGroup label="Accounts">
+          {active.length > 0 && (
+            <ToolbarButton icon="arrows-left-right" onClick={transfer}>
+              Transfer
+            </ToolbarButton>
+          )}
           <ToolbarButton icon="plus" onClick={add}>
             Add Account
           </ToolbarButton>

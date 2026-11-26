@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
  * Keyboard shortcuts (design § 5.5), all in one place:
  *
  *   ⌘N / Ctrl+N, or N with no text field focused → Add transaction
+ *   T with no text field focused                → Transfer between accounts (⌘T is the browser's)
  *   ⌘1–⌘5, ⌥⌘1–⌥⌘5 (also Ctrl)               → Home, Activity, Budgets, Insights, Subscriptions
  *   ⌘F / Ctrl+F                                 → Search
  *   ⌃⌘S                                         → Show/hide the sidebar
@@ -15,12 +16,14 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
  */
 export const SHORTCUTS = {
   add: { keys: 'Meta+N Control+N N', hint: '⌘N' },
+  transfer: { keys: 'T', hint: 'T' },
   search: { keys: 'Meta+F Control+F', hint: '⌘F' },
   sidebar: { keys: 'Control+Meta+S', hint: '⌃⌘S' },
 } as const
 
 export interface ShortcutHandlers {
   onAdd: () => void
+  onTransfer: () => void
   onSection: (index: number) => void
   onSearch: () => void
   onToggleSidebar: () => void
@@ -71,6 +74,14 @@ export function useGlobalShortcuts(handlers: ShortcutHandlers) {
           h.onAdd()
           return
         }
+      }
+      // Plain T outside text fields (never ⌘T: that's the browser's new tab)
+      if ((key === 't' || e.code === 'KeyT') && !mod && !e.altKey && !e.shiftKey) {
+        if (!isTextField(e.target) && !modalOpen()) {
+          e.preventDefault()
+          h.onTransfer()
+        }
+        return
       }
       if (!mod || modalOpen()) return
       // ⌘1–5 / ⌥⌘1–5 (e.code, since ⌥ changes e.key on macOS)
