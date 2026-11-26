@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 
 import { useAddSheet } from '@/app/add-sheet'
 import { Screen } from '@/app/Screen'
+import { useTransferSheet } from '@/app/transfer-sheet'
 import { Card, List } from '@/components/ui/List'
 import { GlassButton } from '@/components/ui/GlassButton'
 import { Icon } from '@/components/ui/Icon'
@@ -10,6 +11,9 @@ import { Menu, MenuPopup, MenuRadioGroup, MenuRadioItem } from '@/components/ui/
 import { SearchField } from '@/components/ui/SearchField'
 import { Segmented } from '@/components/ui/Segmented'
 import { EmptyState, InlineError, SkeletonBlock, SkeletonRows } from '@/components/ui/States'
+import { TransferActions, TransferFacts, TransferHeader } from '@/features/transfers/TransferDetails'
+import { TransferRow } from '@/features/transfers/TransferRow'
+import { useTransferActions } from '@/features/transfers/useTransfers'
 import { useAccounts, useCategories, useHousehold } from '@/lib/api/queries'
 import { formatMonthName, localToday, monthOf } from '@/lib/format'
 import { useIsRegular } from '@/lib/hooks/useMediaQuery'
@@ -23,7 +27,7 @@ import { addRecentSearch, clearRecentSearches, readRecentSearches } from './rece
 import { SwipeRow } from './SwipeRow'
 import { TransactionActions, TransactionFacts, TransactionHeader } from './TransactionDetails'
 import { TransactionRow } from './TransactionRow'
-import { flattenPages, groupByDay, type EntryKind, type Transaction } from './transactions'
+import { flattenPages, groupByDay, type ActivityEntry, type EntryKind } from './transactions'
 import { useTransactionActions } from './useTransactionActions'
 import { useTransactions, type TransactionStatus } from './useTransactions'
 
@@ -34,6 +38,9 @@ const STATUS_LABELS: Record<TransactionStatus, string> = {
   posted: 'Confirmed',
   skipped: 'Skipped',
 }
+
+/** The facts list inside the inspector card: flush, with a hairline above. */
+const INSPECTOR_LIST = 'rounded-none border-t-[0.5px] border-separator shadow-none lg:rounded-none lg:shadow-none'
 
 const KIND_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -52,6 +59,8 @@ function isTextField(el: EventTarget | null): boolean {
  * groups of two-line rows with swipe actions, infinite scroll, Filter sheet.
  * Desktop: filters row (segmented + category/account pop-ups), the day-grouped table
  * with one selected row (↑↓, Return edits, ⌫ deletes with Undo) and the sticky inspector.
+ * Transfers between accounts are listed with the transactions, in the same order (never
+ * counted in the day totals); the Expenses/Income and category filters leave them out.
  * Filters live in the URL: ?q=&kind=&category=&account=&status= (status=pending is linked
  * from Subscriptions' "waiting for confirmation" row).
  */
@@ -72,8 +81,10 @@ export function ActivityPage() {
   const categories = useCategories()
   const accounts = useAccounts()
   const addSheet = useAddSheet()
+  const transferSheet = useTransferSheet()
   const actions = useTransactionActions()
-  const list = useTransactions({ kind, status, categoryId, accountId, q: debouncedQ })
+  const transferActions = useTransferActions()
+  const list = useTransactions({ kind, status, categoryId, accountId, q: debouncedQ, includeTransfers: true })
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | undefined>()
@@ -81,9 +92,10 @@ export function ActivityPage() {
   const today = household.data?.today ?? localToday()
   const monthName = formatMonthName(household.data?.currentMonth ?? monthOf(today))
 
-  const { items, dayTotals } = useMemo(() => flattenPages(list.data?.pages ?? []), [list.data])
+  const { entries: items, dayTotals } = useMemo(() => flattenPages(list.data?.pages ?? []), [list.data])
   const groups = useMemo(() => groupByDay(items, dayTotals), [items, dayTotals])
-  const selected = items.find((t) => t.id === selectedId) ?? items[0]
+  const selected = items.find((e) => e.id === selectedId) ?? items[0]
+  const homeCurrency = list.data?.pages[0]?.homeCurrency ?? household.data?.homeCurrency
 
   const update = useCallback(
     (changes: Record<string, string | undefined>) => {
@@ -110,15 +122,22 @@ export function ActivityPage() {
     if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage()
   }, Boolean(list.hasNextPage))
 
-  const edit = useCallback((t: Transaction) => addSheet.open({ transactionId: t.id, kind: t.kind }), [addSheet])
+  const edit = useCallback(
+    (e: ActivityEntry) =>
+      e.type === 'transfer'
+        ? transferSheet.open({ transferId: e.id })
+        : addSheet.open({ transactionId: e.id, kind: e.transaction.kind }),
+    [addSheet, transferSheet],
+  )
   const remove = useCallback(
-    (t: Transaction) => {
-      const i = items.findIndex((x) => x.id === t.id)
+    (e: ActivityEntry) => {
+      const i = items.findIndex((x) => x.id === e.id)
       const next = items[i + 1] ?? items[i - 1]
-      if (t.id === selected?.id) setSelectedId(next?.id)
-      void actions.remove(t)
+      if (e.id === selected?.id) setSelectedId(next?.id)
+      if (e.type === 'transfer') void transferActions.remove(e.transfer)
+      else void actions.remove(e.transaction)
     },
-    [items, selected, actions],
+    [items, selected, actions, transferActions],
   )
 
   // Desktop keyboard: ↑↓ move the selection, Return edits, ⌫ deletes (with Undo).
@@ -131,7 +150,7 @@ export function ActivityPage() {
       const target = e.target instanceof HTMLElement ? e.target : null
       if (target && target.closest('button, a') && !target.closest('[role="listbox"]')) return
       if (!selected) return
-      const i = items.findIndex((t) => t.id === selected.id)
+      const i = items.findIndex((x) => x.id === selected.id)
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault()
         const next = items[Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), items.length - 1)]
@@ -192,24 +211,32 @@ export function ActivityPage() {
           <ActivityTable
             groups={groups}
             selectedId={selected?.id}
-            onSelect={(t) => setSelectedId(t.id)}
+            onSelect={(e) => setSelectedId(e.id)}
             onOpen={edit}
             today={today}
             timezone={household.data?.timezone}
             kind={kind}
+            currency={homeCurrency}
           />
           <div ref={loadMoreRef} aria-hidden className="h-px" />
           {list.isFetchingNextPage && <ActivityTableSkeleton rows={2} />}
         </div>
         {selected && (
-          <aside className="sticky top-[84px]" aria-label="Transaction details">
+          <aside className="sticky top-[84px]" aria-label={selected.type === 'transfer' ? 'Transfer details' : 'Transaction details'}>
             <Card className="overflow-hidden">
-              <TransactionHeader t={selected} />
-              <TransactionFacts
-                t={selected}
-                className="rounded-none border-t-[0.5px] border-separator shadow-none lg:rounded-none lg:shadow-none"
-              />
-              <TransactionActions t={selected} className="border-t-[0.5px] border-separator p-3.5" />
+              {selected.type === 'transfer' ? (
+                <>
+                  <TransferHeader tr={selected.transfer} />
+                  <TransferFacts tr={selected.transfer} className={INSPECTOR_LIST} />
+                  <TransferActions tr={selected.transfer} className="border-t-[0.5px] border-separator p-3.5" />
+                </>
+              ) : (
+                <>
+                  <TransactionHeader t={selected.transaction} />
+                  <TransactionFacts t={selected.transaction} className={INSPECTOR_LIST} />
+                  <TransactionActions t={selected.transaction} className="border-t-[0.5px] border-separator p-3.5" />
+                </>
+              )}
             </Card>
           </aside>
         )}
@@ -220,15 +247,15 @@ export function ActivityPage() {
       <>
         {groups.map((g) => (
           <section key={g.date} className="mt-[22px]" aria-label={g.date}>
-            <DayHeading group={g} today={today} kind={kind} className="px-1 pb-2" />
+            <DayHeading group={g} today={today} kind={kind} currency={homeCurrency} className="px-1 pb-2" />
             <List>
-              {g.items.map((t) => (
+              {g.items.map((e) => (
                 <SwipeRow
-                  key={t.id}
-                  leading={{ label: 'Edit', icon: 'pencil-simple', onAction: () => edit(t) }}
-                  trailing={{ label: 'Delete', icon: 'trash', onAction: () => remove(t) }}
+                  key={e.id}
+                  leading={{ label: 'Edit', icon: 'pencil-simple', onAction: () => edit(e) }}
+                  trailing={{ label: 'Delete', icon: 'trash', onAction: () => remove(e) }}
                 >
-                  <TransactionRow t={t} />
+                  {e.type === 'transfer' ? <TransferRow tr={e.transfer} /> : <TransactionRow t={e.transaction} />}
                 </SwipeRow>
               ))}
             </List>

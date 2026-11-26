@@ -264,6 +264,42 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /transactions/{id}/skip`.
     /// - Remark: Generated from `#/paths//transactions/{id}/skip/post(skipTransaction)`.
     func skipTransaction(_ input: Operations.SkipTransaction.Input) async throws -> Operations.SkipTransaction.Output
+    /// Move money from one account to another
+    ///
+    /// Between accounts in the same currency both amounts are the same (`toAmountMinor` can
+    /// be left out). Between currencies, send what actually arrived; left out, it's converted
+    /// with that day's BNR rate (422 `fx_rate_unavailable` if missing).
+    /// Idempotent when the same `id` is sent again.
+    ///
+    ///
+    /// - Remark: HTTP `POST /transfers`.
+    /// - Remark: Generated from `#/paths//transfers/post(createTransfer)`.
+    func createTransfer(_ input: Operations.CreateTransfer.Input) async throws -> Operations.CreateTransfer.Output
+    /// One transfer
+    ///
+    /// - Remark: HTTP `GET /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/get(getTransfer)`.
+    func getTransfer(_ input: Operations.GetTransfer.Input) async throws -> Operations.GetTransfer.Output
+    /// Replace a transfer's editable fields
+    ///
+    /// 409 `version_conflict`. Between currencies, a left-out `toAmountMinor` keeps the
+    /// current one when the amount, accounts and day are unchanged; otherwise it's
+    /// converted again with that day's BNR rate.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/put(updateTransfer)`.
+    func updateTransfer(_ input: Operations.UpdateTransfer.Input) async throws -> Operations.UpdateTransfer.Output
+    /// Delete a transfer (soft; restore it with Undo)
+    ///
+    /// - Remark: HTTP `DELETE /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)`.
+    func deleteTransfer(_ input: Operations.DeleteTransfer.Input) async throws -> Operations.DeleteTransfer.Output
+    /// Undo a delete
+    ///
+    /// - Remark: HTTP `POST /transfers/{id}/restore`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/restore/post(restoreTransfer)`.
+    func restoreTransfer(_ input: Operations.RestoreTransfer.Input) async throws -> Operations.RestoreTransfer.Output
     /// Limits, spending and pace for every expense category in a budget month
     ///
     /// - Remark: HTTP `GET /budgets`.
@@ -817,6 +853,84 @@ extension APIProtocol {
         headers: Operations.SkipTransaction.Input.Headers = .init()
     ) async throws -> Operations.SkipTransaction.Output {
         try await skipTransaction(Operations.SkipTransaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Move money from one account to another
+    ///
+    /// Between accounts in the same currency both amounts are the same (`toAmountMinor` can
+    /// be left out). Between currencies, send what actually arrived; left out, it's converted
+    /// with that day's BNR rate (422 `fx_rate_unavailable` if missing).
+    /// Idempotent when the same `id` is sent again.
+    ///
+    ///
+    /// - Remark: HTTP `POST /transfers`.
+    /// - Remark: Generated from `#/paths//transfers/post(createTransfer)`.
+    public func createTransfer(
+        headers: Operations.CreateTransfer.Input.Headers = .init(),
+        body: Operations.CreateTransfer.Input.Body
+    ) async throws -> Operations.CreateTransfer.Output {
+        try await createTransfer(Operations.CreateTransfer.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// One transfer
+    ///
+    /// - Remark: HTTP `GET /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/get(getTransfer)`.
+    public func getTransfer(
+        path: Operations.GetTransfer.Input.Path,
+        headers: Operations.GetTransfer.Input.Headers = .init()
+    ) async throws -> Operations.GetTransfer.Output {
+        try await getTransfer(Operations.GetTransfer.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Replace a transfer's editable fields
+    ///
+    /// 409 `version_conflict`. Between currencies, a left-out `toAmountMinor` keeps the
+    /// current one when the amount, accounts and day are unchanged; otherwise it's
+    /// converted again with that day's BNR rate.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/put(updateTransfer)`.
+    public func updateTransfer(
+        path: Operations.UpdateTransfer.Input.Path,
+        headers: Operations.UpdateTransfer.Input.Headers = .init(),
+        body: Operations.UpdateTransfer.Input.Body
+    ) async throws -> Operations.UpdateTransfer.Output {
+        try await updateTransfer(Operations.UpdateTransfer.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a transfer (soft; restore it with Undo)
+    ///
+    /// - Remark: HTTP `DELETE /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)`.
+    public func deleteTransfer(
+        path: Operations.DeleteTransfer.Input.Path,
+        headers: Operations.DeleteTransfer.Input.Headers = .init()
+    ) async throws -> Operations.DeleteTransfer.Output {
+        try await deleteTransfer(Operations.DeleteTransfer.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Undo a delete
+    ///
+    /// - Remark: HTTP `POST /transfers/{id}/restore`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/restore/post(restoreTransfer)`.
+    public func restoreTransfer(
+        path: Operations.RestoreTransfer.Input.Path,
+        headers: Operations.RestoreTransfer.Input.Headers = .init()
+    ) async throws -> Operations.RestoreTransfer.Output {
+        try await restoreTransfer(Operations.RestoreTransfer.Input(
             path: path,
             headers: headers
         ))

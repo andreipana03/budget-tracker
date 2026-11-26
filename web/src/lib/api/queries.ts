@@ -27,6 +27,7 @@ export type Category = components['schemas']['Category']
 export type CategoryRef = components['schemas']['CategoryRef']
 export type Subscription = components['schemas']['Subscription']
 export type SubscriptionList = components['schemas']['SubscriptionList']
+export type Transfer = components['schemas']['Transfer']
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -52,15 +53,17 @@ export const queryKeys = {
   transactions: (filters: Record<string, unknown> = {}) => ['transactions', filters] as const,
   /** ['transaction', id] */
   transaction: (id: string) => ['transaction', id] as const,
+  /** ['transfer', id] */
+  transfer: (id: string) => ['transfer', id] as const,
 }
 
 /**
  * Call after any write that moves money or changes how it's grouped (transactions,
- * budgets, subscriptions, accounts, categories, household settings): refreshes every
+ * transfers, budgets, subscriptions, accounts, categories, household settings): refreshes every
  * screen that shows it. Cheap: only active queries refetch right away.
  */
 export function invalidateMoney(queryClient: QueryClient) {
-  const prefixes = ['home', 'budgets', 'months', 'insights', 'transactions', 'transaction',
+  const prefixes = ['home', 'budgets', 'months', 'insights', 'transactions', 'transaction', 'transfer',
     'accounts', 'categories', 'subscriptions', 'household']
   return Promise.all(prefixes.map((p) => queryClient.invalidateQueries({ queryKey: [p] })))
 }

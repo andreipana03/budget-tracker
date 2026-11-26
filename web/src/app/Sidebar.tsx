@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 
 import { SECTIONS, sectionForPath, sectionShortcut } from './nav'
 import { SHORTCUTS } from './shortcuts'
+import { useTransferSheet } from './transfer-sheet'
 
 const ITEM =
   'flex h-[34px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-body text-label hover:bg-fill-4 ' +
@@ -42,14 +43,16 @@ function SidebarItem({
 /**
  * Regular-width navigation (design § 5.2, § 5.4): floating glass-strong sidebar,
  * 244px, 10px from the window edges. Sections with ⌘1–5, Subscriptions badge
- * (pending + due in 7 days), Accounts with balances and the ≈ total, Settings at
- * the bottom. Degrades quietly while data is loading or unavailable.
+ * (pending + due in 7 days), Accounts with balances, the ≈ total and "Transfer" (T) on
+ * the group's header row, Settings at the bottom. Degrades quietly while data is
+ * loading or unavailable.
  */
 export function Sidebar({ hidden, onHide }: { hidden: boolean; onHide: () => void }) {
   const { pathname } = useLocation()
   const region = useRegion()
   const section = pathname.startsWith('/settings') ? null : sectionForPath(pathname)
   const accounts = useAccounts()
+  const transferSheet = useTransferSheet()
   const subs = useSubscriptions()
   const badge = subs.data ? subs.data.pendingCount + subs.data.nextSevenDays.length : 0
 
@@ -102,9 +105,23 @@ export function Sidebar({ hidden, onHide }: { hidden: boolean; onHide: () => voi
 
       {!accounts.isError && (
         <section aria-labelledby="sidebar-accounts">
-          <h2 id="sidebar-accounts" className="mt-4 mb-1 px-2.5 text-footnote font-bold tracking-[0.01em] text-label-2">
-            Accounts
-          </h2>
+          <div className="mt-4 mb-1 flex items-baseline justify-between gap-2 px-2.5">
+            <h2 id="sidebar-accounts" className="m-0 text-footnote font-bold tracking-[0.01em] text-label-2">
+              Accounts
+            </h2>
+            {accounts.data?.items.some((a) => !a.archived) && (
+              <button
+                type="button"
+                onClick={() => transferSheet.open()}
+                aria-label="Transfer Between Accounts"
+                aria-keyshortcuts={SHORTCUTS.transfer.keys}
+                title={`Transfer Between Accounts (${SHORTCUTS.transfer.hint})`}
+                className="-my-1 rounded-[6px] px-1.5 py-1 text-footnote text-tint-text hover:bg-fill-4"
+              >
+                Transfer
+              </button>
+            )}
+          </div>
           {accounts.isPending ? (
             <div className="flex flex-col gap-3 px-2.5 py-2" aria-hidden>
               <SkeletonBlock className="h-3 w-40" />

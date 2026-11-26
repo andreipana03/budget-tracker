@@ -677,6 +677,26 @@ type CreateTransactionRequest struct {
 	Title *string `json:"title,omitempty"`
 }
 
+// CreateTransferRequest defines model for CreateTransferRequest.
+type CreateTransferRequest struct {
+	FromAccountId openapi_types.UUID `json:"fromAccountId"`
+
+	// FromAmountMinor In the currency of `fromAccountId`.
+	FromAmountMinor int64               `json:"fromAmountMinor"`
+	Id              *openapi_types.UUID `json:"id,omitempty"`
+	Note            *string             `json:"note,omitempty"`
+	OccurredAt      *time.Time          `json:"occurredAt,omitempty"`
+	OccurredOn      openapi_types.Date  `json:"occurredOn"`
+
+	// ToAccountId A different account from `fromAccountId`.
+	ToAccountId openapi_types.UUID `json:"toAccountId"`
+
+	// ToAmountMinor In the currency of `toAccountId`. Same currency: leave it out or send `fromAmountMinor`.
+	// Different currencies: what actually arrived (fees included); left out, it's converted
+	// with the BNR rate of `occurredOn`.
+	ToAmountMinor *int64 `json:"toAmountMinor,omitempty"`
+}
+
 // Currency defines model for Currency.
 type Currency struct {
 	// Code Example: RON
@@ -1120,10 +1140,36 @@ type TransactionPage struct {
 
 	// NextCursor Pass as `cursor` to get the next page; null on the last page.
 	NextCursor *string `json:"nextCursor"`
+
+	// Transfers Only with `includeTransfers=true`: the transfers that belong between `items` on
+	// this page, in the same order (occurredOn desc, occurredAt desc nulls last, id desc).
+	// Merge them with `items` to show one list. Not counted in `dayTotals`.
+	Transfers *[]Transfer `json:"transfers,omitempty"`
 }
 
 // TransactionStatus defines model for TransactionStatus.
 type TransactionStatus string
+
+// Transfer defines model for Transfer.
+type Transfer struct {
+	CreatedAt   time.Time  `json:"createdAt"`
+	FromAccount AccountRef `json:"fromAccount"`
+
+	// FromAmountMinor What left `fromAccount`, in its currency.
+	FromAmountMinor int64              `json:"fromAmountMinor"`
+	Id              openapi_types.UUID `json:"id"`
+	Note            *string            `json:"note"`
+	OccurredAt      *time.Time         `json:"occurredAt"`
+
+	// OccurredOn Calendar day in the household's time zone.
+	OccurredOn openapi_types.Date `json:"occurredOn"`
+	RowVersion int64              `json:"rowVersion"`
+	ToAccount  AccountRef         `json:"toAccount"`
+
+	// ToAmountMinor What arrived in `toAccount`, in its currency. Equals `fromAmountMinor` when the currencies match.
+	ToAmountMinor int64     `json:"toAmountMinor"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
 
 // UpdateAccountRequest defines model for UpdateAccountRequest.
 type UpdateAccountRequest struct {
@@ -1202,6 +1248,18 @@ type UpdateTransactionRequest struct {
 	OccurredOn openapi_types.Date `json:"occurredOn"`
 	RowVersion int64              `json:"rowVersion"`
 	Title      string             `json:"title"`
+}
+
+// UpdateTransferRequest defines model for UpdateTransferRequest.
+type UpdateTransferRequest struct {
+	FromAccountId   openapi_types.UUID `json:"fromAccountId"`
+	FromAmountMinor int64              `json:"fromAmountMinor"`
+	Note            *string            `json:"note,omitempty"`
+	OccurredAt      *time.Time         `json:"occurredAt,omitempty"`
+	OccurredOn      openapi_types.Date `json:"occurredOn"`
+	RowVersion      int64              `json:"rowVersion"`
+	ToAccountId     openapi_types.UUID `json:"toAccountId"`
+	ToAmountMinor   *int64             `json:"toAmountMinor,omitempty"`
 }
 
 // User defines model for User.
@@ -1302,8 +1360,15 @@ type ListTransactionsParams struct {
 	// To Last day to include.
 	To *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
 
-	// Q Case-insensitive search in title and note.
+	// Q Case-insensitive search in title and note (transfers: their note and both
+	// account names).
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
+
+	// IncludeTransfers Also return the household's transfers in `transfers`, merged into the same
+	// order and pages as `items` (so `limit` counts both). Transfers have no kind,
+	// status or category: any of those filters leaves them out. `accountId` matches
+	// either side of a transfer.
+	IncludeTransfers *bool `form:"includeTransfers,omitempty" json:"includeTransfers,omitempty"`
 
 	// Cursor The `nextCursor` of the previous page.
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -1372,6 +1437,12 @@ type UpdateTransactionJSONRequestBody = UpdateTransactionRequest
 
 // ConfirmTransactionJSONRequestBody defines body for ConfirmTransaction for application/json ContentType.
 type ConfirmTransactionJSONRequestBody = ConfirmTransactionRequest
+
+// CreateTransferJSONRequestBody defines body for CreateTransfer for application/json ContentType.
+type CreateTransferJSONRequestBody = CreateTransferRequest
+
+// UpdateTransferJSONRequestBody defines body for UpdateTransfer for application/json ContentType.
+type UpdateTransferJSONRequestBody = UpdateTransferRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -1507,6 +1578,21 @@ type ServerInterface interface {
 	// SkipTransaction Mark a pending subscription charge as not happened this time
 	// (POST /transactions/{id}/skip)
 	SkipTransaction(w http.ResponseWriter, r *http.Request, id Id)
+	// CreateTransfer Move money from one account to another
+	// (POST /transfers)
+	CreateTransfer(w http.ResponseWriter, r *http.Request)
+	// DeleteTransfer Delete a transfer (soft; restore it with Undo)
+	// (DELETE /transfers/{id})
+	DeleteTransfer(w http.ResponseWriter, r *http.Request, id Id)
+	// GetTransfer One transfer
+	// (GET /transfers/{id})
+	GetTransfer(w http.ResponseWriter, r *http.Request, id Id)
+	// UpdateTransfer Replace a transfer's editable fields
+	// (PUT /transfers/{id})
+	UpdateTransfer(w http.ResponseWriter, r *http.Request, id Id)
+	// RestoreTransfer Undo a delete
+	// (POST /transfers/{id}/restore)
+	RestoreTransfer(w http.ResponseWriter, r *http.Request, id Id)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1774,6 +1860,36 @@ func (_ Unimplemented) RestoreTransaction(w http.ResponseWriter, r *http.Request
 // SkipTransaction Mark a pending subscription charge as not happened this time
 // (POST /transactions/{id}/skip)
 func (_ Unimplemented) SkipTransaction(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateTransfer Move money from one account to another
+// (POST /transfers)
+func (_ Unimplemented) CreateTransfer(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteTransfer Delete a transfer (soft; restore it with Undo)
+// (DELETE /transfers/{id})
+func (_ Unimplemented) DeleteTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTransfer One transfer
+// (GET /transfers/{id})
+func (_ Unimplemented) GetTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateTransfer Replace a transfer's editable fields
+// (PUT /transfers/{id})
+func (_ Unimplemented) UpdateTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RestoreTransfer Undo a delete
+// (POST /transfers/{id}/restore)
+func (_ Unimplemented) RestoreTransfer(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2660,6 +2776,19 @@ func (siw *ServerInterfaceWrapper) ListTransactions(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// ------------- Optional query parameter "includeTransfers" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "includeTransfers", r.URL.Query(), &params.IncludeTransfers, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "includeTransfers"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "includeTransfers", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "cursor" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
@@ -2858,6 +2987,124 @@ func (siw *ServerInterfaceWrapper) SkipTransaction(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SkipTransaction(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateTransfer operation middleware
+func (siw *ServerInterfaceWrapper) CreateTransfer(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTransfer(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteTransfer operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTransfer(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTransfer operation middleware
+func (siw *ServerInterfaceWrapper) GetTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTransfer(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateTransfer operation middleware
+func (siw *ServerInterfaceWrapper) UpdateTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateTransfer(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreTransfer operation middleware
+func (siw *ServerInterfaceWrapper) RestoreTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreTransfer(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3084,6 +3331,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/transactions/{id}/skip", wrapper.SkipTransaction)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/transfers", wrapper.CreateTransfer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/transfers/{id}", wrapper.DeleteTransfer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/transfers/{id}", wrapper.GetTransfer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/transfers/{id}", wrapper.UpdateTransfer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/transfers/{id}/restore", wrapper.RestoreTransfer)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/budgets", wrapper.GetBudgets)
@@ -4774,6 +5036,196 @@ func (response SkipTransactiondefaultJSONResponse) VisitSkipTransactionResponse(
 	return err
 }
 
+type CreateTransferRequestObject struct {
+	Body *CreateTransferJSONRequestBody
+}
+
+type CreateTransferResponseObject interface {
+	VisitCreateTransferResponse(w http.ResponseWriter) error
+}
+
+type CreateTransfer201JSONResponse Transfer
+
+func (response CreateTransfer201JSONResponse) VisitCreateTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransferdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response CreateTransferdefaultJSONResponse) VisitCreateTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTransferRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type DeleteTransferResponseObject interface {
+	VisitDeleteTransferResponse(w http.ResponseWriter) error
+}
+
+type DeleteTransfer204Response struct {
+}
+
+func (response DeleteTransfer204Response) VisitDeleteTransferResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTransferdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response DeleteTransferdefaultJSONResponse) VisitDeleteTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransferRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetTransferResponseObject interface {
+	VisitGetTransferResponse(w http.ResponseWriter) error
+}
+
+type GetTransfer200JSONResponse Transfer
+
+func (response GetTransfer200JSONResponse) VisitGetTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransferdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response GetTransferdefaultJSONResponse) VisitGetTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransferRequestObject struct {
+	Id   Id `json:"id"`
+	Body *UpdateTransferJSONRequestBody
+}
+
+type UpdateTransferResponseObject interface {
+	VisitUpdateTransferResponse(w http.ResponseWriter) error
+}
+
+type UpdateTransfer200JSONResponse Transfer
+
+func (response UpdateTransfer200JSONResponse) VisitUpdateTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransferdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response UpdateTransferdefaultJSONResponse) VisitUpdateTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransferRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type RestoreTransferResponseObject interface {
+	VisitRestoreTransferResponse(w http.ResponseWriter) error
+}
+
+type RestoreTransfer200JSONResponse Transfer
+
+func (response RestoreTransfer200JSONResponse) VisitRestoreTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransferdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response RestoreTransferdefaultJSONResponse) VisitRestoreTransferResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListAccounts Accounts with their current balances and the ≈ total in the home currency
@@ -4908,6 +5360,21 @@ type StrictServerInterface interface {
 	// SkipTransaction Mark a pending subscription charge as not happened this time
 	// (POST /transactions/{id}/skip)
 	SkipTransaction(ctx context.Context, request SkipTransactionRequestObject) (SkipTransactionResponseObject, error)
+	// CreateTransfer Move money from one account to another
+	// (POST /transfers)
+	CreateTransfer(ctx context.Context, request CreateTransferRequestObject) (CreateTransferResponseObject, error)
+	// DeleteTransfer Delete a transfer (soft; restore it with Undo)
+	// (DELETE /transfers/{id})
+	DeleteTransfer(ctx context.Context, request DeleteTransferRequestObject) (DeleteTransferResponseObject, error)
+	// GetTransfer One transfer
+	// (GET /transfers/{id})
+	GetTransfer(ctx context.Context, request GetTransferRequestObject) (GetTransferResponseObject, error)
+	// UpdateTransfer Replace a transfer's editable fields
+	// (PUT /transfers/{id})
+	UpdateTransfer(ctx context.Context, request UpdateTransferRequestObject) (UpdateTransferResponseObject, error)
+	// RestoreTransfer Undo a delete
+	// (POST /transfers/{id}/restore)
+	RestoreTransfer(ctx context.Context, request RestoreTransferRequestObject) (RestoreTransferResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -6191,6 +6658,148 @@ func (sh *strictHandler) SkipTransaction(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SkipTransactionResponseObject); ok {
 		if err := validResponse.VisitSkipTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateTransfer operation middleware
+func (sh *strictHandler) CreateTransfer(w http.ResponseWriter, r *http.Request) {
+	var request CreateTransferRequestObject
+
+	var body CreateTransferJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTransfer(ctx, request.(CreateTransferRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTransfer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateTransferResponseObject); ok {
+		if err := validResponse.VisitCreateTransferResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteTransfer operation middleware
+func (sh *strictHandler) DeleteTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	var request DeleteTransferRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTransfer(ctx, request.(DeleteTransferRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTransfer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteTransferResponseObject); ok {
+		if err := validResponse.VisitDeleteTransferResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTransfer operation middleware
+func (sh *strictHandler) GetTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetTransferRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTransfer(ctx, request.(GetTransferRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTransfer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTransferResponseObject); ok {
+		if err := validResponse.VisitGetTransferResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateTransfer operation middleware
+func (sh *strictHandler) UpdateTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	var request UpdateTransferRequestObject
+
+	request.Id = id
+
+	var body UpdateTransferJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateTransfer(ctx, request.(UpdateTransferRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateTransfer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateTransferResponseObject); ok {
+		if err := validResponse.VisitUpdateTransferResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RestoreTransfer operation middleware
+func (sh *strictHandler) RestoreTransfer(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RestoreTransferRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreTransfer(ctx, request.(RestoreTransferRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreTransfer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RestoreTransferResponseObject); ok {
+		if err := validResponse.VisitRestoreTransferResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

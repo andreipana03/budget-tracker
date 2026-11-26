@@ -3,7 +3,17 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { perDayText } from '@/features/home/home-text'
 
 import { addRecentSearch, clearRecentSearches, readRecentSearches } from './recent-searches'
-import { flattenPages, formatRate, groupByDay, repeatLabel, type Transaction, type TransactionPage } from './transactions'
+import {
+  activityEntries,
+  flattenPages,
+  formatRate,
+  groupByDay,
+  repeatLabel,
+  type Transaction,
+  type TransactionPage,
+} from './transactions'
+
+type Transfer = NonNullable<TransactionPage['transfers']>[number]
 
 function tx(id: string, day: string, home: number, extra: Partial<Transaction> = {}): Transaction {
   return {
@@ -36,7 +46,7 @@ function tx(id: string, day: string, home: number, extra: Partial<Transaction> =
 describe('day grouping', () => {
   it('groups by day in API order with the API day totals', () => {
     const items = [tx('lidl', '2026-11-18', 6430), tx('origo', '2026-11-18', 1400), tx('steam', '2026-11-17', 4975)]
-    const groups = groupByDay(items, [
+    const groups = groupByDay(activityEntries(items), [
       { date: '2026-11-18', expenseHomeMinor: 8430, incomeHomeMinor: 0 },
       { date: '2026-11-17', expenseHomeMinor: 13025, incomeHomeMinor: 0 },
     ])
@@ -52,7 +62,7 @@ describe('day grouping', () => {
       tx('b', '2026-11-16', 500, { status: 'pending' }),
       tx('c', '2026-11-16', 85000, { kind: 'income' }),
     ]
-    const [g] = groupByDay(items, [])
+    const [g] = groupByDay(activityEntries(items), [])
     expect(g.expenseHomeMinor).toBe(1000)
     expect(g.incomeHomeMinor).toBe(85000)
   })
@@ -64,7 +74,7 @@ describe('day grouping', () => {
       nextCursor: null,
       homeCurrency: 'RON',
     })
-    const { items, dayTotals } = flattenPages([
+    const { entries, dayTotals } = flattenPages([
       page([tx('a', '2026-11-18', 100), tx('b', '2026-11-17', 200)], [
         { date: '2026-11-18', expenseHomeMinor: 100, incomeHomeMinor: 0 },
         { date: '2026-11-17', expenseHomeMinor: 500, incomeHomeMinor: 0 },
@@ -73,10 +83,49 @@ describe('day grouping', () => {
         { date: '2026-11-17', expenseHomeMinor: 500, incomeHomeMinor: 0 },
       ]),
     ])
-    const groups = groupByDay(items, dayTotals)
+    const groups = groupByDay(entries, dayTotals)
     expect(groups).toHaveLength(2)
     expect(groups[1].items.map((t) => t.id)).toEqual(['b', 'c'])
     expect(groups[1].expenseHomeMinor).toBe(500)
+  })
+
+  it('merges transfers into the same order and never counts them', () => {
+    const transfer = (id: string, day: string, at: string | null): Transfer => ({
+      id,
+      fromAccount: { id: 'a', name: 'ING Card', type: 'bank', currency: 'RON' },
+      fromAmountMinor: 20000,
+      toAccount: { id: 'b', name: 'Cash', type: 'cash', currency: 'RON' },
+      toAmountMinor: 20000,
+      occurredOn: day,
+      occurredAt: at,
+      note: null,
+      rowVersion: 1,
+      createdAt: '2026-11-18T10:00:00Z',
+      updatedAt: '2026-11-18T10:00:00Z',
+    })
+    const { entries } = flattenPages([
+      {
+        items: [
+          tx('lidl', '2026-11-18', 6430, { occurredAt: '2026-11-18T12:00:00Z' }),
+          tx('steam', '2026-11-17', 4975),
+        ],
+        transfers: [
+          transfer('t-atm', '2026-11-18', '2026-11-18T09:00:00Z'),
+          transfer('t-late', '2026-11-18', '2026-11-18T19:30:00.123456Z'),
+          transfer('t-old', '2026-11-16', null),
+        ],
+        dayTotals: [],
+        nextCursor: null,
+        homeCurrency: 'RON',
+      },
+    ])
+    expect(entries.map((e) => e.id)).toEqual(['t-late', 'lidl', 't-atm', 'steam', 't-old'])
+    const groups = groupByDay(entries, [])
+    expect(groups.map((g) => [g.date, g.expenseHomeMinor])).toEqual([
+      ['2026-11-18', 6430],
+      ['2026-11-17', 4975],
+      ['2026-11-16', 0],
+    ])
   })
 })
 

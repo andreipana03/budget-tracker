@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router'
 
 import { SheetPresenceContext } from '@/components/ui/sheet-presence'
 import { AddSheetHost } from '@/features/add/AddSheetHost'
+import { TransferSheetHost } from '@/features/transfers/TransferSheetHost'
 import { cn } from '@/lib/utils'
 
 import { useAddSheet } from './add-sheet'
@@ -16,6 +17,7 @@ import { useGlobalShortcuts } from './shortcuts'
 import { Sidebar } from './Sidebar'
 import { TabBar } from './TabBar'
 import { loadTabPage } from './tab-pages'
+import { useTransferSheet } from './transfer-sheet'
 
 const SIDEBAR_PREF = 'bt.sidebarHidden'
 
@@ -41,7 +43,7 @@ function focusVisibleSearch(): boolean {
 /**
  * The app frame (design § 5): floating glass sidebar ≥ 1024, floating tab bar +
  * Add button below; one scroller for screens with scroll-edge bands; the global
- * Add sheet; keyboard shortcuts. While a compact sheet is open the page recedes.
+ * Add and Transfer sheets; keyboard shortcuts. While a compact sheet is open the page recedes.
  * Screens render through <Outlet /> and use <Screen> for their chrome.
  * Compact: tab screens swipe sideways (page-swipe.ts, with the neighbour in <PagePeek>);
  * every other navigation slides as a View Transition (page-transitions.ts).
@@ -56,6 +58,7 @@ export function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const addSheet = useAddSheet()
+  const transferSheet = useTransferSheet()
 
   const toggleSidebar = useCallback(() => {
     setSidebarHidden((h) => {
@@ -97,6 +100,7 @@ export function AppShell() {
 
   useGlobalShortcuts({
     onAdd: () => addSheet.open(),
+    onTransfer: () => transferSheet.open(),
     onSection: (i) => navigate(SECTIONS[i].path),
     onSearch: () => {
       if (!focusVisibleSearch()) navigate('/activity')
@@ -119,6 +123,7 @@ export function AppShell() {
           {peek != null && <PagePeek key={peek} index={peek} peekRef={swipe.attachPeek} />}
           <TabBar />
           <AddSheetHost />
+          <TransferSheetHost />
         </div>
       </SheetPresenceContext.Provider>
     </ShellContext.Provider>

@@ -1,3 +1,4 @@
+import { useTransferSheet } from '@/app/transfer-sheet'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card, List, Row } from '@/components/ui/List'
 import { Money } from '@/components/ui/Money'
@@ -13,16 +14,19 @@ import { accountsFooter } from './home-text'
  * Home › Accounts (compact and medium only; at ≥1024 the sidebar shows the same
  * group). One single-line row per active account (tile · name · balance in its own
  * currency) and a Total row with the ≈ total in the home currency, as in the sidebar.
- * A row opens Activity filtered to that account.
+ * A row opens Activity filtered to that account; "Transfer" in the header opens the
+ * Transfer sheet (the sidebar has the same button at ≥1024).
  */
 export function AccountsSection() {
   const accounts = useAccounts()
+  const transferSheet = useTransferSheet()
   const data = accounts.data
   const active = data?.items.filter((a) => !a.archived) ?? []
 
   return (
     <Section
       title="Accounts"
+      action={active.length > 0 ? { label: 'Transfer', onClick: () => transferSheet.open() } : undefined}
       footer={data && active.length > 0 ? accountsFooter(data) : undefined}
     >
       {accounts.isError ? (

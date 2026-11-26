@@ -14,6 +14,7 @@ import { loadTabPage } from './tab-pages'
 const appRoutes: RouteObject[] = [
   { index: true, lazy: async () => ({ Component: await loadTabPage('home') }) },
   { path: 'activity', lazy: async () => ({ Component: await loadTabPage('activity') }) },
+  { path: 'activity/transfers/:id', lazy: async () => ({ Component: (await import('@/features/transfers/TransferDetailPage')).TransferDetailPage }) },
   { path: 'activity/:id', lazy: async () => ({ Component: (await import('@/features/activity/TransactionDetailPage')).TransactionDetailPage }) },
   { path: 'budgets', lazy: async () => ({ Component: await loadTabPage('budgets') }) },
   { path: 'budgets/:categoryId', lazy: async () => ({ Component: (await import('@/features/budgets/CategoryDetailPage')).CategoryDetailPage }) },

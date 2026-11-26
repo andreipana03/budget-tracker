@@ -10,6 +10,8 @@ import { ReceiptIcon } from '@phosphor-icons/react/Receipt'
 import { ChartDonutIcon } from '@phosphor-icons/react/ChartDonut'
 import { ChartBarIcon } from '@phosphor-icons/react/ChartBar'
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react/ArrowsClockwise'
+import { ArrowsLeftRightIcon } from '@phosphor-icons/react/ArrowsLeftRight'
+import { ArrowsDownUpIcon } from '@phosphor-icons/react/ArrowsDownUp'
 import { PlusIcon } from '@phosphor-icons/react/Plus'
 import { MinusIcon } from '@phosphor-icons/react/Minus'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/MagnifyingGlass'
@@ -108,6 +110,8 @@ export const ICONS = {
   'chart-donut': ChartDonutIcon,
   'chart-bar': ChartBarIcon,
   'arrows-clockwise': ArrowsClockwiseIcon,
+  'arrows-left-right': ArrowsLeftRightIcon,
+  'arrows-down-up': ArrowsDownUpIcon,
   'plus': PlusIcon,
   'minus': MinusIcon,
   'magnifying-glass': MagnifyingGlassIcon,

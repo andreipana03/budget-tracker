@@ -10,16 +10,21 @@ import { hueVar } from '@/lib/categories'
 import { formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
+import { TransferAmount, TransferArrived, TransferTile } from '@/features/transfers/TransferRow'
+import { transferSpokenTitle, transferTitle, type Transfer } from '@/features/transfers/transfers'
+
 import { DayHeading } from './DayHeading'
 import { StatusPill, TransactionAmount } from './TransactionRow'
-import { isForeign, type DayGroup, type EntryKind, type Transaction } from './transactions'
+import { isForeign, type ActivityEntry, type DayGroup, type EntryKind, type Transaction } from './transactions'
 
 const COLS = 'grid-cols-[minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1fr)_64px_132px] gap-3'
 
 /**
  * Desktop Activity table (design § 6.12): Merchant (tile + name + note) · Category
- * (dot + name) · Account · Time · Amount, grouped by day. One selected row in
- * `tint-soft`; the page handles ↑↓ / Return / ⌫. Click selects, double-click edits.
+ * (dot + name) · Account · Time · Amount, grouped by day. Transfers sit in the same
+ * order: "ING Card → Cash", category "Transfer", the account the money left. One
+ * selected row in `tint-soft`; the page handles ↑↓ / Return / ⌫. Click selects,
+ * double-click edits.
  */
 export function ActivityTable({
   groups,
@@ -29,14 +34,17 @@ export function ActivityTable({
   today,
   timezone,
   kind,
+  currency,
 }: {
   groups: DayGroup[]
   selectedId: string | undefined
-  onSelect: (t: Transaction) => void
-  onOpen: (t: Transaction) => void
+  onSelect: (e: ActivityEntry) => void
+  onOpen: (e: ActivityEntry) => void
   today: string
   timezone?: string
   kind?: EntryKind
+  /** Home currency for the day totals. */
+  currency?: string
 }) {
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -65,17 +73,34 @@ export function ActivityTable({
       </div>
       {groups.map((g) => (
         <Fragment key={g.date}>
-          <DayHeading group={g} today={today} kind={kind} className="border-b-[0.5px] border-separator px-3.5 pt-3.5 pb-1.5" />
-          {g.items.map((t) => (
-            <TableRow
-              key={t.id}
-              t={t}
-              selected={t.id === selectedId}
-              onSelect={onSelect}
-              onOpen={onOpen}
-              timezone={timezone}
-            />
-          ))}
+          <DayHeading
+            group={g}
+            today={today}
+            kind={kind}
+            currency={currency}
+            className="border-b-[0.5px] border-separator px-3.5 pt-3.5 pb-1.5"
+          />
+          {g.items.map((e) =>
+            e.type === 'transfer' ? (
+              <TransferTableRow
+                key={e.id}
+                tr={e.transfer}
+                selected={e.id === selectedId}
+                onSelect={() => onSelect(e)}
+                onOpen={() => onOpen(e)}
+                timezone={timezone}
+              />
+            ) : (
+              <TableRow
+                key={e.id}
+                t={e.transaction}
+                selected={e.id === selectedId}
+                onSelect={() => onSelect(e)}
+                onOpen={() => onOpen(e)}
+                timezone={timezone}
+              />
+            ),
+          )}
         </Fragment>
       ))}
     </List>
@@ -91,8 +116,8 @@ function TableRow({
 }: {
   t: Transaction
   selected: boolean
-  onSelect: (t: Transaction) => void
-  onOpen: (t: Transaction) => void
+  onSelect: () => void
+  onOpen: () => void
   timezone?: string
 }) {
   return (
@@ -101,8 +126,8 @@ function TableRow({
       data-tx-id={t.id}
       role="option"
       aria-selected={selected}
-      onClick={() => onSelect(t)}
-      onDoubleClick={() => onOpen(t)}
+      onClick={onSelect}
+      onDoubleClick={onOpen}
       className={cn(
         rowClasses({ size: 'double', interactive: true, selected }),
         'grid scroll-mt-[124px] scroll-mb-4 [--sep-inset:14px]',
@@ -131,6 +156,56 @@ function TableRow({
       <span className="flex flex-col items-end text-right text-body">
         <TransactionAmount t={t} />
         {isForeign(t) && <Money minor={t.homeAmountMinor} currency={t.homeCurrency} className="text-callout text-label-2" />}
+      </span>
+    </div>
+  )
+}
+
+/** A transfer in the table: ⇄ tile, "ING Card → Cash" + note · "Transfer" · from-account · time · amount. */
+function TransferTableRow({
+  tr,
+  selected,
+  onSelect,
+  onOpen,
+  timezone,
+}: {
+  tr: Transfer
+  selected: boolean
+  onSelect: () => void
+  onOpen: () => void
+  timezone?: string
+}) {
+  return (
+    <div
+      id={`tx-${tr.id}`}
+      data-tx-id={tr.id}
+      role="option"
+      aria-selected={selected}
+      aria-label={`Transfer from ${transferSpokenTitle(tr)}`}
+      onClick={onSelect}
+      onDoubleClick={onOpen}
+      className={cn(
+        rowClasses({ size: 'double', interactive: true, selected }),
+        'grid scroll-mt-[124px] scroll-mb-4 [--sep-inset:14px]',
+        COLS,
+      )}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <TransferTile size={40} />
+        <span className="min-w-0">
+          <span className="block truncate text-body font-semibold">{transferTitle(tr)}</span>
+          {tr.note && <span className="block truncate text-callout text-label-2">{tr.note}</span>}
+        </span>
+      </span>
+      <span className="flex min-w-0 items-center gap-2 text-body">
+        <i aria-hidden className="size-2 flex-none rounded-full bg-label-3" />
+        <span className="truncate">Transfer</span>
+      </span>
+      <span className="truncate text-body text-label-2">{tr.fromAccount.name}</span>
+      <span className="text-body text-label-2 tabular-nums">{tr.occurredAt ? formatTime(tr.occurredAt, timezone) : '—'}</span>
+      <span className="flex flex-col items-end text-right text-body">
+        <TransferAmount tr={tr} />
+        <TransferArrived tr={tr} className="text-callout text-label-2" />
       </span>
     </div>
   )

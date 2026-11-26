@@ -10,6 +10,7 @@ import { registerCurrencies } from '@/lib/format/money'
 import { RegionProvider } from '@/lib/format/region'
 
 import { AddSheetProvider } from './add-sheet'
+import { TransferSheetProvider } from './transfer-sheet'
 
 function createQueryClient() {
   return new QueryClient({
@@ -33,7 +34,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <AuthProvider>
         <RegionFromUser>
           <ToastProvider>
-            <AddSheetProvider>{children}</AddSheetProvider>
+            <AddSheetProvider>
+              <TransferSheetProvider>{children}</TransferSheetProvider>
+            </AddSheetProvider>
           </ToastProvider>
         </RegionFromUser>
       </AuthProvider>

@@ -5,6 +5,7 @@ import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AddSheetProvider, useAddSheet } from '@/app/add-sheet'
+import { TransferSheetProvider, useTransferSheet } from '@/app/transfer-sheet'
 import { AppShell } from '@/app/AppShell'
 import { RegionProvider } from '@/lib/format'
 
@@ -139,11 +140,16 @@ describe('States', () => {
 describe('AppShell', () => {
   function renderShell(path = '/budgets') {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const holder: { api: ReturnType<typeof useAddSheet> | null } = { api: null }
+    const holder: { api: ReturnType<typeof useAddSheet> | null; transfer: ReturnType<typeof useTransferSheet> | null } = {
+      api: null,
+      transfer: null,
+    }
     function Probe() {
       const api = useAddSheet()
+      const transfer = useTransferSheet()
       useEffect(() => {
         holder.api = api
+        holder.transfer = transfer
       })
       return <p>Budgets screen</p>
     }
@@ -157,13 +163,15 @@ describe('AppShell', () => {
         <RegionProvider region="RO">
           <ToastProvider>
             <AddSheetProvider>
-              <RouterProvider router={router} />
+              <TransferSheetProvider>
+                <RouterProvider router={router} />
+              </TransferSheetProvider>
             </AddSheetProvider>
           </ToastProvider>
         </RegionProvider>
       </QueryClientProvider>,
     )
-    return { router, getApi: () => holder.api }
+    return { router, getApi: () => holder.api, getTransfer: () => holder.transfer }
   }
 
   it('selects the current tab and section', () => {
@@ -183,5 +191,17 @@ describe('AppShell', () => {
       fireEvent.keyDown(window, { key: '2', code: 'Digit2', metaKey: true })
     })
     expect(router.state.location.pathname).toBe('/activity')
+  })
+
+  it('opens the Transfer sheet with T (⌘T stays the browser’s)', () => {
+    const { getTransfer } = renderShell()
+    act(() => {
+      fireEvent.keyDown(window, { key: 't', code: 'KeyT', metaKey: true })
+    })
+    expect(getTransfer()?.state.isOpen).toBe(false)
+    act(() => {
+      fireEvent.keyDown(window, { key: 't', code: 'KeyT' })
+    })
+    expect(getTransfer()?.state.isOpen).toBe(true)
   })
 })

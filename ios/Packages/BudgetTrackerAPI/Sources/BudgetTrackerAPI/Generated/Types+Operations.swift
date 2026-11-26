@@ -3833,10 +3833,20 @@ public enum Operations {
                 ///
                 /// - Remark: Generated from `#/paths/transactions/GET/query/to`.
                 public var to: Swift.String?
-                /// Case-insensitive search in title and note.
+                /// Case-insensitive search in title and note (transfers: their note and both
+                /// account names).
+                ///
                 ///
                 /// - Remark: Generated from `#/paths/transactions/GET/query/q`.
                 public var q: Swift.String?
+                /// Also return the household's transfers in `transfers`, merged into the same
+                /// order and pages as `items` (so `limit` counts both). Transfers have no kind,
+                /// status or category: any of those filters leaves them out. `accountId` matches
+                /// either side of a transfer.
+                ///
+                ///
+                /// - Remark: Generated from `#/paths/transactions/GET/query/includeTransfers`.
+                public var includeTransfers: Swift.Bool?
                 /// The `nextCursor` of the previous page.
                 ///
                 /// - Remark: Generated from `#/paths/transactions/GET/query/cursor`.
@@ -3853,7 +3863,8 @@ public enum Operations {
                 ///   - month: A budget month (its period honours the household's month start day).
                 ///   - from: First day to include.
                 ///   - to: Last day to include.
-                ///   - q: Case-insensitive search in title and note.
+                ///   - q: Case-insensitive search in title and note (transfers: their note and both
+                ///   - includeTransfers: Also return the household's transfers in `transfers`, merged into the same
                 ///   - cursor: The `nextCursor` of the previous page.
                 ///   - limit:
                 public init(
@@ -3865,6 +3876,7 @@ public enum Operations {
                     from: Swift.String? = nil,
                     to: Swift.String? = nil,
                     q: Swift.String? = nil,
+                    includeTransfers: Swift.Bool? = nil,
                     cursor: Swift.String? = nil,
                     limit: Swift.Int? = nil
                 ) {
@@ -3876,6 +3888,7 @@ public enum Operations {
                     self.from = from
                     self.to = to
                     self.q = q
+                    self.includeTransfers = includeTransfers
                     self.cursor = cursor
                     self.limit = limit
                 }
@@ -4997,6 +5010,738 @@ public enum Operations {
             /// Something went wrong; `code` says what
             ///
             /// - Remark: Generated from `#/paths//transactions/{id}/skip/post(skipTransaction)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Move money from one account to another
+    ///
+    /// Between accounts in the same currency both amounts are the same (`toAmountMinor` can
+    /// be left out). Between currencies, send what actually arrived; left out, it's converted
+    /// with that day's BNR rate (422 `fx_rate_unavailable` if missing).
+    /// Idempotent when the same `id` is sent again.
+    ///
+    ///
+    /// - Remark: HTTP `POST /transfers`.
+    /// - Remark: Generated from `#/paths//transfers/post(createTransfer)`.
+    public enum CreateTransfer {
+        public static let id: Swift.String = "createTransfer"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/transfers/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateTransfer.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateTransfer.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateTransfer.Input.Headers
+            /// - Remark: Generated from `#/paths/transfers/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.CreateTransferRequest)
+            }
+            public var body: Operations.CreateTransfer.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateTransfer.Input.Headers = .init(),
+                body: Operations.CreateTransfer.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/transfers/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.Transfer)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Transfer {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateTransfer.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateTransfer.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            /// The new transfer
+            ///
+            /// - Remark: Generated from `#/paths//transfers/post(createTransfer)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateTransfer.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateTransfer.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Something went wrong; `code` says what
+            ///
+            /// - Remark: Generated from `#/paths//transfers/post(createTransfer)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One transfer
+    ///
+    /// - Remark: HTTP `GET /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/get(getTransfer)`.
+    public enum GetTransfer {
+        public static let id: Swift.String = "getTransfer"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/transfers/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/GET/path/id`.
+                public var id: Components.Parameters.Id
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Components.Parameters.Id) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetTransfer.Input.Path
+            /// - Remark: Generated from `#/paths/transfers/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTransfer.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTransfer.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTransfer.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetTransfer.Input.Path,
+                headers: Operations.GetTransfer.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/transfers/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Transfer)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Transfer {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTransfer.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTransfer.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The transfer
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/get(getTransfer)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTransfer.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTransfer.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Something went wrong; `code` says what
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/get(getTransfer)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Replace a transfer's editable fields
+    ///
+    /// 409 `version_conflict`. Between currencies, a left-out `toAmountMinor` keeps the
+    /// current one when the amount, accounts and day are unchanged; otherwise it's
+    /// converted again with that day's BNR rate.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/put(updateTransfer)`.
+    public enum UpdateTransfer {
+        public static let id: Swift.String = "updateTransfer"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/transfers/{id}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/PUT/path/id`.
+                public var id: Components.Parameters.Id
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Components.Parameters.Id) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.UpdateTransfer.Input.Path
+            /// - Remark: Generated from `#/paths/transfers/{id}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateTransfer.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateTransfer.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateTransfer.Input.Headers
+            /// - Remark: Generated from `#/paths/transfers/{id}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.UpdateTransferRequest)
+            }
+            public var body: Operations.UpdateTransfer.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateTransfer.Input.Path,
+                headers: Operations.UpdateTransfer.Input.Headers = .init(),
+                body: Operations.UpdateTransfer.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/transfers/{id}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Transfer)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Transfer {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateTransfer.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateTransfer.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The updated transfer
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/put(updateTransfer)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateTransfer.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateTransfer.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Something went wrong; `code` says what
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/put(updateTransfer)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete a transfer (soft; restore it with Undo)
+    ///
+    /// - Remark: HTTP `DELETE /transfers/{id}`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)`.
+    public enum DeleteTransfer {
+        public static let id: Swift.String = "deleteTransfer"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/transfers/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/DELETE/path/id`.
+                public var id: Components.Parameters.Id
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Components.Parameters.Id) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DeleteTransfer.Input.Path
+            /// - Remark: Generated from `#/paths/transfers/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteTransfer.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteTransfer.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteTransfer.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteTransfer.Input.Path,
+                headers: Operations.DeleteTransfer.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Deleted
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteTransfer.Output.NoContent)
+            /// Deleted
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteTransfer.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Something went wrong; `code` says what
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/delete(deleteTransfer)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Undo a delete
+    ///
+    /// - Remark: HTTP `POST /transfers/{id}/restore`.
+    /// - Remark: Generated from `#/paths//transfers/{id}/restore/post(restoreTransfer)`.
+    public enum RestoreTransfer {
+        public static let id: Swift.String = "restoreTransfer"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/transfers/{id}/restore/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/restore/POST/path/id`.
+                public var id: Components.Parameters.Id
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Components.Parameters.Id) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.RestoreTransfer.Input.Path
+            /// - Remark: Generated from `#/paths/transfers/{id}/restore/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RestoreTransfer.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RestoreTransfer.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RestoreTransfer.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RestoreTransfer.Input.Path,
+                headers: Operations.RestoreTransfer.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/transfers/{id}/restore/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/transfers/{id}/restore/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Transfer)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Transfer {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RestoreTransfer.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RestoreTransfer.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The restored transfer
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/restore/post(restoreTransfer)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.RestoreTransfer.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.RestoreTransfer.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Something went wrong; `code` says what
+            ///
+            /// - Remark: Generated from `#/paths//transfers/{id}/restore/post(restoreTransfer)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
